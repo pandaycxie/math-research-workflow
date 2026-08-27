@@ -57,9 +57,11 @@ For each calculation-heavy inference, state the target and exact inputs; display
 enough intermediate equalities or inequalities to expose substitutions,
 cancellations, integrations by parts, boundary terms, domain restrictions, and
 load-bearing signs or constants. Compress routine algebra only when adjacent
-lines determine it. Words such as `standard`, `straightforward`, `after
-simplification`, or `this closes` do not replace a step. End with the exact
-implication that advances the proof.
+lines determine it. Use multiline display math for long calculations—for
+example, an `aligned` chain—with breaks at meaningful transformations and brief
+reasons for non-obvious transitions. Words such as `standard`, `straightforward`,
+`after simplification`, or `this closes` do not replace a step. End with the
+exact implication that advances the proof.
 
 Compression removes discovery history, duplicate routes, and routine
 repetition—not analytic derivations. Put long derivations in named technical

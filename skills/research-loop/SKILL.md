@@ -61,8 +61,9 @@ Report a proof or mark a claim `Proved` only when each load-bearing inference is
 locally checkable. Show calculation inputs, intermediate equalities or
 inequalities, boundary terms, and domain and sign conditions; `standard` or
 `after simplification` is not a step. Compress only algebra fixed by adjacent
-displayed lines. Put long derivations in one bounded log section or evidence
-and link them from the concise claim.
+displayed lines. Prefer multiline display math for long calculations, with
+breaks at mathematically meaningful transformations. Put long derivations in
+one bounded log section or evidence and link them from the concise claim.
 
 Use the helper's `next-id` command for a new claim and prefer the numeric ID
 alone. An optional uppercase suffix is allowed only when it is one established
