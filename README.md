@@ -39,9 +39,8 @@ flowchart TD
     PR --> H["Validated, current handoff"]
     H --> A["Explicit drafting approval"]
     D -- "Explicitly approve direct drafting" --> A
-    S["Completed standalone proof corpus"] --> A
     A --> PP["proof-to-paper"]
-    PP --> M["One publication-ready LaTeX manuscript<br/>and frozen artifact manifest"]
+    PP --> M["One publication-ready manuscript"]
     D -- "Stop" --> X["Preserve the current research files"]
 ```
 
@@ -85,13 +84,13 @@ need a committed fixture directory.
 
 ## Trust boundary
 
-The validators check the structure and internal consistency of declared
-research memory: claim identifiers, dependency cycles, evidence paths, status
-rules, and review-digest freshness. They do **not** prove mathematical claims,
-judge whether cited sources are correct, or establish that an external program
-is safe. A human or trusted research process must review the actual arguments,
-source hypotheses, and reproduction commands before marking a claim `Proved`
-or recording a root digest.
+The research graph validator checks claim identifiers, dependency cycles,
+evidence paths, status rules, and review-digest freshness. The downstream
+helpers check declared paths, file sets, and byte hashes. They do **not** prove
+mathematical claims, validate citations, compile LaTeX, inspect PDFs, or
+establish that an external program is safe. A human or trusted research process
+must review the actual arguments, source hypotheses, reproduction commands,
+and final manuscript.
 
 ## Status
 

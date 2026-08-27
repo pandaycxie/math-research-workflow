@@ -21,14 +21,14 @@ claim.
    final PDF with the bundled helper:
 
    ```bash
-   python <proof-to-paper-directory>/scripts/paper_artifacts.py freeze \
+   python3 <proof-to-paper-directory>/scripts/paper_artifacts.py freeze \
      --manuscript PATH/TO/manuscript_YYYYMMDD
    ```
 
 8. Review exactly those frozen bytes. Run the deterministic final check:
 
    ```bash
-   python <proof-to-paper-directory>/scripts/paper_artifacts.py check \
+   python3 <proof-to-paper-directory>/scripts/paper_artifacts.py check \
      --manuscript PATH/TO/manuscript_YYYYMMDD
    ```
 

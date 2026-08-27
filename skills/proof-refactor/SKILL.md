@@ -81,7 +81,7 @@ asymptotic integration is not an explanation.
 Initialize a nonconflicting dated output folder with the bundled helper:
 
 ```bash
-python <proof-refactor-directory>/scripts/validate_handoff.py \
+python3 <proof-refactor-directory>/scripts/validate_handoff.py \
   --root PROJECT_ROOT --init
 ```
 

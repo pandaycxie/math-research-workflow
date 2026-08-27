@@ -57,7 +57,7 @@ Initialize a new manuscript directory with the bundled helper; it selects a
 nonconflicting dated path and does not overwrite existing work:
 
 ```bash
-python <proof-to-paper-directory>/scripts/paper_artifacts.py init \
+python3 <proof-to-paper-directory>/scripts/paper_artifacts.py init \
   --root PROJECT_ROOT
 ```
 

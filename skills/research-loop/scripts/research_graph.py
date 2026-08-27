@@ -58,6 +58,19 @@ INITIAL_GRAPH: dict[str, Any] = {
 }
 
 
+class DuplicateKeyError(ValueError):
+    """Raised when a JSON object repeats a key."""
+
+
+def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise DuplicateKeyError(f"duplicate JSON key: {key}")
+        value[key] = item
+    return value
+
+
 def resolve_root(explicit_root: Path | None, graph_arg: Path | None) -> Path:
     """Select a root independently of where this global skill is installed."""
     if explicit_root is not None:
@@ -130,7 +143,7 @@ def initialize_memory(root: Path, graph_path: Path, dry_run: bool) -> None:
 
 def load_graph(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as handle:
-        value = json.load(handle)
+        value = json.load(handle, object_pairs_hook=unique_object)
     if not isinstance(value, dict):
         raise ValueError("graph root must be a JSON object")
     return value

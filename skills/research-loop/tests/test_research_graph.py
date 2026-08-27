@@ -113,6 +113,27 @@ The root uses KR-001.
         self.assertFalse((self.root / "KEY_RESULTS.graph.json").exists())
         self.assertFalse((self.root / "RESEARCH_LOG.md").exists())
 
+    def test_duplicate_graph_keys_are_rejected(self) -> None:
+        self.write_ledger(
+            """# Fixture
+
+### KR-001 — Root theorem [Proved]
+
+The claim is proved.
+"""
+        )
+        (self.root / "KEY_RESULTS.graph.json").write_text(
+            '{"schema_version":3,"ledger":"KEY_RESULTS.md",'
+            '"roots":["KR-001"],"roots":[],"requires":{"KR-001":[]},'
+            '"evidence":{},"root_digests":{}}\n',
+            encoding="utf-8",
+        )
+
+        completed = self.run_command("check")
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("duplicate JSON key: roots", completed.stderr)
+
     def test_next_id_uses_append_only_number_and_accepts_existing_mnemonic(self) -> None:
         self.write_ledger(
             """# Fixture
