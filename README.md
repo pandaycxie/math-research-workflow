@@ -6,14 +6,15 @@ The workflow separates open-ended research, proof refinement, and manuscript pro
 
 ## Skills
 
-| Skill | Purpose |
-| --- | --- |
-| `research-loop` | Pursue an active research goal while keeping minimal file-backed memory. |
-| `literature-download` | Retrieve a small, authorized set of academic PDFs through legitimate access routes. |
-| `proof-refactor` | Turn a validated proof closure into a compact, locally checkable proof view. |
-| `proof-to-paper` | Convert a completed proof corpus or handoff into synchronized LaTeX manuscripts. |
+| Skill | Purpose | Upstream dependency |
+| --- | --- | --- |
+| `research-loop` | Pursue an active research goal while keeping minimal file-backed memory. | None |
+| `literature-download` | Retrieve a small, authorized set of academic PDFs through legitimate access routes. | None |
+| `proof-refactor` | Turn a validated proof closure into a compact, locally checkable proof view. | `research-loop` |
+| `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or both upstream proof skills |
 
-Each skill is self-contained under [`skills/`](skills/). Start with
+Each skill lives in its own folder under [`skills/`](skills/). Install any
+upstream dependency listed above with the skill that uses it. Start with
 [`skills/research-loop/SKILL.md`](skills/research-loop/SKILL.md) for the overall
 workflow.
 
@@ -37,8 +38,8 @@ mkdir -p .agents/skills
 cp -R skills/research-loop .agents/skills/
 ```
 
-Or copy them into `${CODEX_HOME:-$HOME/.codex}/skills` to make them available
-across projects.
+Or copy them into `$HOME/.agents/skills` to make them available across
+projects.
 
 ## Initialize research memory
 
@@ -60,6 +61,7 @@ The repository currently uses only the Python standard library:
 ```bash
 python3 -m unittest discover -s skills/research-loop/tests -v
 python3 -m unittest discover -s skills/proof-refactor/tests -v
+python3 -m unittest discover -s skills/proof-to-paper/tests -v
 ```
 
 The tests create temporary examples at runtime, so the repository does not

@@ -11,13 +11,24 @@ claim.
    handoff without treating it as a second claim ledger.
 3. Verify the literature and calibrate any requested writing style.
 4. Design the section hierarchy and theorem dependency map.
-5. Draft a locally checkable synchronized mathematical core, then edit the
-   submission version for concision and annotate the reader version.
-6. Perform a line-by-line self-audit and compare both versions against the
-   core-result ledger after every mathematical repair.
-7. Clean-build both manuscripts; verify current table-of-contents entries,
-   page numbers, and hyperlinks; visually inspect both PDFs.
-8. Freeze the sources and PDFs, record their hashes, and begin review.
+5. Draft a locally checkable manuscript and edit it for concision.
+6. Perform a line-by-line self-audit against the core-result ledger after every
+   mathematical repair.
+7. Clean-build the manuscript; verify current table-of-contents entries, page
+   numbers, and hyperlinks; visually inspect the PDF.
+8. Freeze the reviewed source, bibliography, and PDF with the bundled helper:
+
+   ```bash
+   python <proof-to-paper-directory>/scripts/paper_artifacts.py freeze \
+     --manuscript PATH/TO/manuscript_YYYYMMDD
+   ```
+
+9. Review exactly those frozen bytes. Run the deterministic final check:
+
+   ```bash
+   python <proof-to-paper-directory>/scripts/paper_artifacts.py check \
+     --manuscript PATH/TO/manuscript_YYYYMMDD
+   ```
 
 ## Review–revision loop
 
@@ -36,19 +47,20 @@ Run at least these passes:
    assumptions, availability of every input before use, and agreement between
    statements and proofs.
 3. **Literature and exposition referee:** verify citations and metadata; audit
-   structure, notation, tone, redundancy, and synchronization. Fail a
-   load-bearing passage whose logic depends on an unexplained technique name.
+   structure, notation, tone, and redundancy. Fail a load-bearing passage whose
+   logic depends on an unexplained technique name.
 4. **TeX and PDF referee:** clean-compile, check labels and citations, inspect
    metadata, and visually examine every page for clipping, overflow, broken
    formulas, blank pages, or stale output.
 
 Classify findings as fatal, major, or minor. Treat every unresolved
-correctness, support, synchronization, or production defect as `FAIL`;
-optional stylistic preferences are non-blocking unless they expose a concrete
-defect. Consolidate repairs when practical, rebuild both versions, freeze new
-hashes, and repeat exact-hash review. Do not claim `PASS` for a stale PDF or a
-source different from the reviewed hash. A reviewer must not silently edit the
-frozen manuscript.
+correctness, support, or production defect as `FAIL`; optional stylistic
+preferences are non-blocking unless they expose a concrete defect. Consolidate
+repairs when practical, rebuild the manuscript, freeze new hashes, and repeat
+exact-hash review. Do not claim `PASS` for a stale PDF or source different from
+the reviewed hash. A reviewer must not silently edit the frozen manuscript.
+After an approved revision, refresh the manifest explicitly with
+`freeze --replace`, then rerun `check`.
 
 Stop only when all required reviews return `PASS` with no residual major or
 minor issue, or when a genuine mathematical gap requires the user's decision
@@ -56,7 +68,7 @@ about returning to research.
 
 ## Acceptance criteria
 
-- Both manuscripts clean-compile independently.
+- The manuscript clean-compiles independently.
 - No unresolved actionable errors, warnings, references, citations,
   duplicated definitions, or layout defects remain. Document any verified
   benign warning class.
@@ -67,12 +79,12 @@ about returning to research.
   mechanism.
 - The theorem hierarchy is visible from the introduction, table of contents,
   and section openings.
-- Both manuscripts contain a current rendered table of contents at depth two,
+- The manuscript contains a current rendered table of contents at depth two,
   unless a documented venue requirement prohibits it.
-- The reader and submission versions agree mathematically.
 - Every PDF page has been visually inspected.
 - Final source and PDF hashes match the reviewed versions.
+- The bundled artifact helper's `check` command passes.
 
-Deliver the two source paths, the two PDF paths, a concise proof-architecture
-summary, and the final review verdict. Remove standalone-mode temporary ledger
-and audit debris from the manuscript tree unless the user requests them.
+Deliver the source path, PDF path, concise proof-architecture summary, and final
+review verdict. Remove standalone-mode temporary ledger and audit debris from
+the manuscript tree unless the user requests them.

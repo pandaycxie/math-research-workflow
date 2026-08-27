@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a proof-refactor handoff's source binding and proof byte hash.
+"""Create or validate a proof-refactor handoff and its byte-level bindings.
 
 This intentionally does not validate the research DAG, ledger, evidence, or
 root freshness. Run research-loop's ``check --strict --complete`` separately.
@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -115,6 +116,105 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return "sha256:" + digest.hexdigest()
+
+
+def initialize(root: Path) -> int:
+    stem = f"proof_refactor_{date.today():%Y%m%d}"
+    output = root / stem
+    suffix = 2
+    while output.exists():
+        output = root / f"{stem}-{suffix}"
+        suffix += 1
+    try:
+        output.mkdir()
+        (output / "proof.md").touch()
+    except OSError as error:
+        print_json({"ok": False, "errors": [f"cannot initialize refactor: {error}"]})
+        return 1
+    print_json(
+        {"ok": True, "output": str(output), "created": ["proof.md"]}
+    )
+    return 0
+
+
+def create_manifest(root: Path, handoff: Path, proof_value: Path) -> list[str]:
+    errors: list[str] = []
+    if not handoff.parent.is_dir():
+        return [f"handoff parent is not a directory: {handoff.parent}"]
+    if handoff.exists() or handoff.is_symlink():
+        return [f"handoff already exists: {handoff}"]
+
+    proof = (
+        proof_value.expanduser().resolve()
+        if proof_value.expanduser().is_absolute()
+        else (handoff.parent / proof_value.expanduser()).resolve()
+    )
+    if not is_within(proof, handoff.parent):
+        errors.append("proof path escapes handoff directory")
+    elif not readable_file(proof, "proof", errors):
+        pass
+
+    graph_path = (root / CANONICAL_GRAPH).resolve()
+    if not is_within(graph_path, root):
+        errors.append("canonical graph escapes research root")
+    elif not readable_file(graph_path, "source.graph", errors):
+        pass
+
+    graph: Any = None
+    if not errors:
+        try:
+            graph = load_json(graph_path)
+        except (OSError, UnicodeError, json.JSONDecodeError, DuplicateKeyError) as error:
+            errors.append(f"cannot read source graph: {error}")
+    if errors:
+        return errors
+    if not isinstance(graph, dict):
+        return ["source graph root must be a JSON object"]
+
+    roots = graph.get("roots")
+    roots_valid = not (
+        not isinstance(roots, list)
+        or not roots
+        or not all(isinstance(item, str) and item for item in roots)
+    )
+    if not roots_valid:
+        errors.append("source graph roots must be a non-empty list of strings")
+    elif len(set(roots)) != len(roots):
+        errors.append("source graph roots contains duplicates")
+        roots_valid = False
+
+    root_digests = graph.get("root_digests")
+    if not isinstance(root_digests, dict):
+        errors.append("source graph root_digests must be a JSON object")
+    elif roots_valid:
+        if set(root_digests) != set(roots):
+            errors.append("source graph root_digests keys must equal roots")
+        for claim_id, digest in root_digests.items():
+            if not isinstance(digest, str) or not SHA256_DIGEST.fullmatch(digest):
+                errors.append(f"invalid SHA-256 digest for source root {claim_id}")
+    if errors:
+        return errors
+
+    manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": KIND,
+        "status": STATUS,
+        "source": {
+            "graph": CANONICAL_GRAPH,
+            "roots": roots,
+            "root_digests": root_digests,
+        },
+        "proof": proof.relative_to(handoff.parent).as_posix(),
+        "proof_sha256": file_sha256(proof),
+    }
+    try:
+        handoff.write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as error:
+        return [f"cannot write handoff: {error}"]
+    return []
 
 
 def validate_manifest(
@@ -252,13 +352,39 @@ def validate_manifest(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True, help="Research root")
-    parser.add_argument("handoff", type=Path, help="Path to handoff.json")
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument(
+        "--init",
+        action="store_true",
+        help="Create a nonconflicting refactor directory and empty proof.md",
+    )
+    action.add_argument(
+        "--create",
+        action="store_true",
+        help="Create the handoff from the canonical graph and proof bytes",
+    )
+    parser.add_argument(
+        "--proof",
+        type=Path,
+        help="Proof path, relative to the handoff directory unless absolute",
+    )
+    parser.add_argument("handoff", type=Path, nargs="?", help="Path to handoff.json")
     args = parser.parse_args()
 
     root = args.root.expanduser().resolve()
     if not root.is_dir():
         print_json({"ok": False, "errors": [f"root is not a directory: {root}"]})
         return 1
+
+    if args.init:
+        if args.handoff is not None or args.proof is not None:
+            print_json(
+                {"ok": False, "errors": ["--init does not accept handoff or --proof"]}
+            )
+            return 1
+        return initialize(root)
+    if args.handoff is None:
+        parser.error("handoff path is required unless --init is used")
 
     handoff_arg = args.handoff.expanduser()
     handoff = (
@@ -268,6 +394,17 @@ def main() -> int:
     )
     if not is_within(handoff, root):
         print_json({"ok": False, "errors": ["handoff path escapes research root"]})
+        return 1
+    if args.create:
+        if args.proof is None:
+            print_json({"ok": False, "errors": ["--create requires --proof"]})
+            return 1
+        errors = create_manifest(root, handoff, args.proof)
+        if errors:
+            print_json({"ok": False, "errors": errors})
+            return 1
+    elif args.proof is not None:
+        print_json({"ok": False, "errors": ["--proof requires --create"]})
         return 1
     errors: list[str] = []
     if not readable_file(handoff, "handoff", errors):
@@ -294,6 +431,7 @@ def main() -> int:
             "proof": str(proof),
             "roots": roots,
             "proof_sha256": proof_digest,
+            "created": args.create,
         }
     )
     return 0

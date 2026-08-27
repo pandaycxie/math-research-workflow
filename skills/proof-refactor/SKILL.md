@@ -1,6 +1,6 @@
 ---
 name: proof-refactor
-description: After explicit user approval, refactor a validated research-loop proof closure into a conceptually compressed, locally checkable proof view with claim traceability and a digest-bound handoff for proof-to-paper. Do not repair new mathematical gaps or draft a manuscript.
+description: Refactor a completed, research-loop-validated proof closure into a compact, locally checkable proof and digest-bound handoff. Requires explicit user approval; do not repair mathematical gaps or draft a manuscript.
 ---
 
 # Proof Refactor
@@ -43,8 +43,6 @@ into polished prose.
 - Create a new output directory and never overwrite a prior refactor.
 - Read only in-scope claim sections, load-bearing evidence descriptions, and
   targeted log entries needed to understand the proof route.
-- Record the current Goal roots and root digests before writing the derived
-  proof.
 - Do not create a second claim inventory, dependency graph, status ledger, or
   bibliography.
 
@@ -79,8 +77,14 @@ fraktur symbol, choose a conventional replacement and state the mapping once.
 
 ## Deliverables
 
-Create a new folder such as the following, adding a numeric suffix when the
-dated path already exists:
+Initialize a nonconflicting dated output folder with the bundled helper:
+
+```bash
+python <proof-refactor-directory>/scripts/validate_handoff.py \
+  --root PROJECT_ROOT --init
+```
+
+The completed artifact has this layout:
 
 ```text
 proof_refactor_YYYYMMDD/
@@ -91,7 +95,9 @@ proof_refactor_YYYYMMDD/
 `proof.md` is not a manuscript. Unless the user explicitly requests another
 language, write every generated file in English, including prose in Markdown,
 comments, tables, and ancillary documentation. Conversation may follow the
-user's language. Include only what the proof needs:
+user's language. The initializer creates an empty `proof.md`; the handoff
+helper creates `handoff.json` after semantic review. Include only what the
+proof needs:
 
 - the exact theorem scope and source roots;
 - a concise account of the core mathematical idea;
@@ -104,67 +110,9 @@ Do not create LaTeX submission files, an abstract, introduction, venue format,
 or a new literature review. Those belong to `$proof-to-paper` after separate
 user approval.
 
-## Handoff contract
+## Handoff and exit review
 
-After semantic review, write the minimal `handoff.json`:
-
-```json
-{
-  "schema_version": 1,
-  "kind": "proof-refactor-handoff",
-  "status": "validated",
-  "source": {
-    "graph": "KEY_RESULTS.graph.json",
-    "roots": ["KR-001"],
-    "root_digests": {"KR-001": "sha256:<64 lowercase hex>"}
-  },
-  "proof": "proof.md",
-  "proof_sha256": "sha256:<64 lowercase hex>"
-}
-```
-
-The graph path must be exactly `KEY_RESULTS.graph.json` in the research root;
-old or alternate graph copies are not valid handoff sources. The proof path is
-relative to the handoff directory. The manifest binds the derived view to the
-complete current root set and recorded root digests; it does not claim to
-validate the mathematics by itself.
-
-Use the bundled validator:
-
-```bash
-python <proof-refactor-directory>/scripts/validate_handoff.py \
-  --root PROJECT_ROOT PATH/TO/handoff.json
-```
-
-The validator checks schema, path containment, source roots/digests, and the
-proof byte hash. It deliberately does not duplicate DAG, ledger, evidence, or
-freshness validation from `$research-loop`.
-
-## Exit review and routing
-
-Before reporting success:
-
-1. audit the refactored proof against every claim in the source closure;
-2. confirm that assumptions, definitions, domains, quantifiers, signs, and
-   conclusions did not change;
-3. rerun relevant existing certificate or formal checks when the rewritten
-   exposition relies on their precise outputs;
-4. cold-read the load-bearing passages without project-internal context and
-   repair any passage whose inference is carried only by a technique name;
-5. rerun `check --strict --complete` to detect concurrent canonical changes;
-6. validate `handoff.json` against the current files.
-
-Report `REFACTORED READY` only when the canonical closure is still complete,
-the proof is traceable, and the handoff validator passes. This status does not
-authorize paper drafting.
-
-Use these failure routes:
-
-- canonical completion failure or a genuine central gap: `RETURN TO RESEARCH`;
-- changed source roots/digests or proof hash: `STALE OR INVALID HANDOFF`;
-- intact source but incomplete exposition mapping: remain in `$proof-refactor`
-  and repair the derived proof.
-
-After `REFACTORED READY`, ask whether the user wants to start
-`$proof-to-paper`, rerun refactoring, or stop. Never invoke the next skill
-without explicit drafting approval.
+After the semantic proof view is complete and before creating or validating its
+handoff, read [references/handoff.md](references/handoff.md). Follow its schema,
+validator command, final source audit, and failure routing. Do not report
+`REFACTORED READY` until both the canonical closure and handoff remain current.

@@ -1,6 +1,6 @@
 ---
 name: literature-download
-description: Download academic PDFs explicitly requested by the user or identified within a user-authorized bounded research task. Prefer legitimate open-access copies; when unavailable and authorized, use an existing authenticated browser session for entitled access. Never store credentials, bypass controls, purchase access, or crawl in bulk.
+description: Retrieve explicitly requested academic PDFs or a bounded set authorized for the current research task. Prefer legitimate open-access copies; use authenticated access only when authorized, and never bypass access controls or purchase content.
 ---
 
 # Literature Download

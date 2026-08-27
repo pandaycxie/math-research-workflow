@@ -1,18 +1,16 @@
 # Manuscript standard
 
 Read this reference after the paperization entry gate passes and before
-outlining or drafting either manuscript.
+outlining or drafting the manuscript.
 
-## Shared sources and navigation
+## Sources and navigation
 
-Use one authoritative bibliography, shared or mechanically synchronized. Both
-versions must compile independently.
+Use one authoritative bibliography. The manuscript must compile independently.
 
-Both `submission_version/main.tex` and `reader_version/main.tex` must include a
-rendered table of contents. Unless a venue requirement explicitly prohibits
-it, place `\tableofcontents` after the front matter and before the introduction,
-and set its depth to two. Keep entries, page numbers, and hyperlinks current
-after the final clean build.
+`main.tex` must include a rendered table of contents. Unless a venue requirement
+explicitly prohibits it, place `\tableofcontents` after the front matter and
+before the introduction, and set its depth to two. Keep entries, page numbers,
+and hyperlinks current after the final clean build.
 
 ## Manuscript architecture
 
@@ -59,7 +57,7 @@ language.
   something mathematically necessary.
 - A technique name is not a proof. State the formula, sign structure,
   hypotheses, and conclusion that make every load-bearing use work.
-- In analysis-oriented manuscripts, avoid fraktur fonts unless the user
+- In an analysis-oriented manuscript, avoid fraktur fonts unless the user
   explicitly requires preserving them.
 - Typeset each initial-value or boundary-value problem as one braced system,
   with every equation and condition on its own line.
@@ -81,27 +79,9 @@ When the user requests calibration to a named author or venue, inspect a small
 representative set of authoritative examples and extract structural traits
 rather than wording.
 
-## Two synchronized versions
+## Publication version
 
-### Submission version
-
-Make `submission_version/main.tex` concise, formal, self-contained, and
-publication-ready. Keep motivation proportional to its mathematical value;
-proofs should be economical but complete.
-
-### Reader version
-
-Make `reader_version/main.tex` a guided proof version for the author. Preserve
-the same assumptions, theorem conclusions, conventions, numbered mathematical
-statements, equation labels, and bibliography. Add only expository support:
-
-- a reading order and dependency map;
-- a notation or length-scale table when useful;
-- brief section contracts;
-- proof ideas before the hardest modules;
-- checkpoints explaining what was proved and where it is used.
-
-The reader version must never be mathematically stale or weaker. Port every
-mathematical correction to both versions before review. Reader-only notes may
-aid navigation or motivation, but every explanation needed to verify a proof
-must remain in the shared mathematical core.
+Make `main.tex` concise, formal, self-contained, and publication-ready. Keep
+motivation proportional to its mathematical value; proofs should be economical
+but complete. Add a dependency map, notation table, section contracts, or proof
+ideas only when they materially improve verification or navigation.

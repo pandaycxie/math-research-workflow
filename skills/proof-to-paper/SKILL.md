@@ -1,13 +1,14 @@
 ---
 name: proof-to-paper
-description: After explicit user approval, convert a completed mathematical proof corpus, validated research-loop closure, or current proof-refactor handoff into synchronized publication-ready LaTeX manuscripts. Do not start from a readiness report alone or repair central proof gaps.
+description: Turn a completed proof corpus, validated research-loop closure, or current proof-refactor handoff into one publication-ready LaTeX manuscript. Requires explicit drafting approval; do not repair central proof gaps.
 ---
 
 # Proof to Paper
 
 ## Objective
 
-Turn validated mathematical work into two rigorous, compact English manuscripts without strengthening the hypotheses, weakening the conclusions, or hiding proof gaps.
+Turn validated mathematical work into one rigorous, compact English manuscript
+without strengthening hypotheses, weakening conclusions, or hiding proof gaps.
 
 ## Authorization and research handoff
 
@@ -61,20 +62,29 @@ paper prose.
 
 ## Deliverables
 
-Create a new, suitably named folder without overwriting existing work. Unless
-the repository has a better convention, use the following and add a numeric
-suffix when the dated path already exists:
+Initialize a new manuscript directory with the bundled helper; it selects a
+nonconflicting dated path and does not overwrite existing work:
+
+```bash
+python <proof-to-paper-directory>/scripts/paper_artifacts.py init \
+  --root PROJECT_ROOT
+```
+
+The completed artifact has this layout:
 
 ```text
-manuscript_versions_YYYYMMDD/
+manuscript_YYYYMMDD/
 ├── references.bib
-├── submission_version/
-│   ├── main.tex
-│   └── output/pdf/main.pdf
-└── reader_version/
-    ├── main.tex
-    └── output/pdf/reader_version.pdf
+├── main.tex
+├── output/pdf/main.pdf
+└── artifact-manifest.json
 ```
+
+The initializer creates the directory structure and empty bibliography. Write
+the mathematical manuscript as `main.tex` and build `output/pdf/main.pdf`.
+The artifact helper creates `artifact-manifest.json` only after the reviewed
+source, bibliography, and PDF are frozen; its final check must pass before a
+completion claim.
 
 ## Entry Gate
 
@@ -100,8 +110,7 @@ Before drafting:
 
 After the entry gate passes and before outlining or drafting, read
 [manuscript-standard.md](references/manuscript-standard.md). It defines the
-proof-dependent architecture, writing standard, bibliography policy, and the
-synchronization contract for the two versions.
+proof-dependent architecture, writing standard, and bibliography policy.
 
 Before the first clean build, frozen review, or completion claim, read
 [production-review.md](references/production-review.md). Follow its production
