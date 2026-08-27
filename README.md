@@ -12,7 +12,7 @@ The workflow separates open-ended research, proof refinement, and manuscript pro
 | --- | --- | --- |
 | `research-loop` | Pursue an active research goal while keeping minimal file-backed memory. | None |
 | `proof-refactor` | Turn a validated proof closure into a compact, locally checkable proof view. | `research-loop` |
-| `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or both upstream proof skills |
+| `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or `research-loop` plus `proof-refactor` |
 
 Each skill lives in its own folder under [`skills/`](skills/). Install any
 upstream dependency listed above with the skill that uses it. Start with

@@ -76,10 +76,6 @@ or certificate conclusion that performs the inference. Merely naming a tool
 such as an Agmon estimate, Hellmann--Feynman, cooperativity, or standard
 asymptotic integration is not an explanation.
 
-For analysis-oriented work, do not introduce fraktur notation. Prefer
-ordinary Roman, Greek, or calligraphic symbols; if the canonical source uses a
-fraktur symbol, choose a conventional replacement and state the mapping once.
-
 ## Deliverables
 
 Initialize a nonconflicting dated output folder with the bundled helper:
@@ -97,12 +93,10 @@ proof_refactor_YYYYMMDD/
 └── handoff.json
 ```
 
-`proof.md` is not a manuscript. Unless the user explicitly requests another
-language, write every generated file in English, including prose in Markdown,
-comments, tables, and ancillary documentation. Conversation may follow the
-user's language. The initializer creates an empty `proof.md`; the handoff
-helper creates `handoff.json` after semantic review. Include only what the
-proof needs:
+`proof.md` is not a manuscript. Use the language requested by the user;
+otherwise preserve the dominant language of the canonical proof material. The
+initializer creates an empty `proof.md`; the handoff helper creates
+`handoff.json` after semantic review. Include only what the proof needs:
 
 - the exact theorem scope and source roots;
 - a concise account of the core mathematical idea;

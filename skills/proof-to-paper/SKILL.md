@@ -74,8 +74,10 @@ manuscript_YYYYMMDD/
 The initializer creates the directory structure and empty bibliography. Write
 the mathematical manuscript as `main.tex` and build `output/pdf/main.pdf`.
 The artifact helper creates `artifact-manifest.json` only after the reviewed
-source, bibliography, and PDF are frozen; its final check must pass before a
-completion claim. Do not create synchronized reader and submission variants.
+manuscript source tree, resources, bibliography, and final PDF are frozen. It
+ignores compiler temporaries and non-final files under `output/`; its final
+check must pass before a completion claim. Do not create synchronized reader
+and submission variants.
 
 ## Entry checks
 

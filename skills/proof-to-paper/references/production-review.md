@@ -17,7 +17,8 @@ claim.
 6. Immediately before freezing, rerun every applicable deterministic upstream
    completion and handoff validator. Stop if the canonical source or derived
    proof changed during drafting.
-7. Freeze the reviewed source, bibliography, and PDF with the bundled helper:
+7. Freeze the reviewed manuscript source tree, resources, bibliography, and
+   final PDF with the bundled helper:
 
    ```bash
    python <proof-to-paper-directory>/scripts/paper_artifacts.py freeze \
@@ -63,7 +64,8 @@ bytes before rerunning `check`.
 - The proof architecture and theorem hierarchy are clear at the level needed
   by the manuscript and venue.
 - The compiled PDF has been inspected for layout and stale-output defects.
-- Final source and PDF hashes match the reviewed versions.
+- The complete frozen manuscript file set and its hashes match the reviewed
+  versions.
 - The bundled artifact helper's `check` command passes.
 
 Deliver the source path, PDF path, concise proof-architecture summary, and final
