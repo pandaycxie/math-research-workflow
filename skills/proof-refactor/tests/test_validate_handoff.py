@@ -78,6 +78,17 @@ class ValidateHandoffCLITest(unittest.TestCase):
         completed = self.run_command("--root", str(self.root), str(target))
         return completed, json.loads(completed.stdout)
 
+    def run_creator(self) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
+        completed = self.run_command(
+            "--root",
+            str(self.root),
+            "--create",
+            "--proof",
+            self.proof.name,
+            str(self.handoff),
+        )
+        return completed, json.loads(completed.stdout)
+
     def assert_invalid(self, substring: str) -> None:
         completed, payload = self.run_validator()
         self.assertEqual(completed.returncode, 1, completed.stderr)
@@ -90,6 +101,46 @@ class ValidateHandoffCLITest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["roots"], ["KR-001", "KR-002"])
         self.assertEqual(payload["proof_sha256"], self.proof_digest())
+
+    def test_create_builds_and_validates_handoff(self) -> None:
+        self.handoff.unlink()
+        completed, payload = self.run_creator()
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["created"])
+        manifest = json.loads(self.handoff.read_text(encoding="utf-8"))
+        self.assertEqual(manifest, self.default_handoff())
+
+    def test_create_refuses_to_overwrite_handoff(self) -> None:
+        completed, payload = self.run_creator()
+        self.assertEqual(completed.returncode, 1)
+        self.assertTrue(any("already exists" in error for error in payload["errors"]))
+
+    def test_create_rejects_invalid_graph_binding(self) -> None:
+        self.handoff.unlink()
+        graph = self.default_graph()
+        graph["root_digests"].pop("KR-002")
+        self.write_graph(graph)
+
+        completed, payload = self.run_creator()
+        self.assertEqual(completed.returncode, 1)
+        self.assertTrue(any("keys must equal roots" in error for error in payload["errors"]))
+        self.assertFalse(self.handoff.exists())
+
+    def test_init_creates_minimal_nonconflicting_layout(self) -> None:
+        first = self.run_command("--root", str(self.root), "--init")
+        first_payload = json.loads(first.stdout)
+        second = self.run_command("--root", str(self.root), "--init")
+        second_payload = json.loads(second.stdout)
+
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        first_output = Path(first_payload["output"])
+        second_output = Path(second_payload["output"])
+        self.assertEqual(second_output.name, first_output.name + "-2")
+        self.assertTrue((first_output / "proof.md").is_file())
+        self.assertFalse((first_output / "handoff.json").exists())
 
     def test_graph_root_order_is_not_semantic(self) -> None:
         graph = self.default_graph()

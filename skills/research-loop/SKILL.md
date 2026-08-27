@@ -1,6 +1,6 @@
 ---
 name: research-loop
-description: Keep minimal file-backed research memory—key results, hard dependencies, targeted literature evidence, and a concise log—while an active Goal drives autonomous theoretical or computational research. At completion, report readiness for optional proof refactoring or paperization without starting either.
+description: Pursue an active theoretical or computational research Goal with minimal file-backed memory of key claims, hard dependencies, evidence, and restart state. Use for long-running research; report readiness without starting proof refactoring or paper drafting.
 ---
 
 # Research Loop
