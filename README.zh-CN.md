@@ -11,7 +11,6 @@
 | Skill | 用途 | 上游依赖 |
 | --- | --- | --- |
 | `research-loop` | 推进当前研究目标，同时维护最小化的文件记忆。 | 无 |
-| `literature-download` | 通过合法访问途径获取少量、已获授权的学术 PDF。 | 无 |
 | `proof-refactor` | 将已经验证的证明及其依赖整理成紧凑、可局部核查的证明视图。 | `research-loop` |
 | `proof-to-paper` | 将完整的证明材料或交接结果转换成一份可投稿的 LaTeX 手稿。 | 取决于输入：无、`research-loop`，或同时依赖 `research-loop` 与 `proof-refactor` |
 
@@ -26,8 +25,6 @@
 1. `research-loop` 推进研究，并验证目标所需的关键结论及其依赖。
 2. `proof-refactor` 将已完成的证明重新组织为便于局部核查的形式。
 3. `proof-to-paper` 将已验证的证明转换成论文手稿。
-
-当当前任务得到明确授权时，`literature-download` 可用于有针对性地获取文献。
 
 ## 本地安装
 

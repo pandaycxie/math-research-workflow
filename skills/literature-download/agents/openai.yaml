@@ -1,4 +1,0 @@
-interface:
-  display_name: "Literature Download"
-  short_description: "Retrieve authorized academic PDFs safely"
-  default_prompt: "Use $literature-download to retrieve the explicitly authorized papers, preferring open-access copies and using an existing authenticated browser session only when authorized and necessary."

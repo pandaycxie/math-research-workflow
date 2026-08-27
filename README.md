@@ -11,7 +11,6 @@ The workflow separates open-ended research, proof refinement, and manuscript pro
 | Skill | Purpose | Upstream dependency |
 | --- | --- | --- |
 | `research-loop` | Pursue an active research goal while keeping minimal file-backed memory. | None |
-| `literature-download` | Retrieve a small, authorized set of academic PDFs through legitimate access routes. | None |
 | `proof-refactor` | Turn a validated proof closure into a compact, locally checkable proof view. | `research-loop` |
 | `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or both upstream proof skills |
 
@@ -27,9 +26,6 @@ The skills form a staged workflow:
 1. `research-loop` develops and validates the research closure.
 2. `proof-refactor` reorganizes a completed proof for local verification.
 3. `proof-to-paper` converts the validated proof into manuscript form.
-
-`literature-download` supports targeted source retrieval when explicitly
-authorized for the current task.
 
 ## Install locally
 
