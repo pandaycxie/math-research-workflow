@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Loop"
+  short_description: "Goal-led research with minimal durable memory"
+  default_prompt: "Use $research-loop to pursue the active Goal autonomously with minimal durable memory, then report readiness for optional proof refactoring or direct paperization without starting either."

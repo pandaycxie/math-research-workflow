@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proof Refactor"
+  short_description: "Turn validated proofs into clear, traceable handoffs"
+  default_prompt: "Use $proof-refactor to streamline this validated proof without changing its mathematics and prepare a traceable handoff."

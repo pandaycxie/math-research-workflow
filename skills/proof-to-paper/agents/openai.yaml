@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proof to Paper"
+  short_description: "Turn an approved proof closure or handoff into papers"
+  default_prompt: "Use $proof-to-paper after my explicit approval to turn the validated research closure or current $proof-refactor handoff into synchronized submission and guided-reader manuscripts."

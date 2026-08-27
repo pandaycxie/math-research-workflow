@@ -1,0 +1,4 @@
+interface:
+  display_name: "Literature Download"
+  short_description: "Download academic PDFs with safe institutional access"
+  default_prompt: "Use $literature-download to retrieve the requested papers, using my authenticated institutional browser session only when open-access copies are unavailable."
