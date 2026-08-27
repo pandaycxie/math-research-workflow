@@ -6,8 +6,14 @@ digests, or auditing the graph.
 
 ## Initialization and claim format
 
-If the memory files are absent, create the smallest useful versions without
-overwriting anything. Initialize the graph as:
+If the memory files are absent, use the bundled initializer:
+
+```bash
+python3 <skill-directory>/scripts/research_graph.py --root <research-root> init
+```
+
+The command creates the three minimal memory files and refuses to overwrite an
+existing one. Its graph starts as:
 
 ```json
 {"schema_version": 3, "ledger": "KEY_RESULTS.md", "roots": [], "requires": {}, "evidence": {}, "root_digests": {}}

@@ -37,7 +37,7 @@ mkdir -p .agents/skills
 cp -R skills/research-loop .agents/skills/
 ```
 
-Or copy them into your personal Codex skills directory to make them available
+Or copy them into `${CODEX_HOME:-$HOME/.codex}/skills` to make them available
 across projects.
 
 ## Initialize research memory

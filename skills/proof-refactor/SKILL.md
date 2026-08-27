@@ -29,6 +29,10 @@ not assume a repository-local copy of the helper. Use the verified Goal roots
 and their complete `requires` closure as scope; the readiness report is only a
 routing summary.
 
+If the required `$research-loop` skill or helper cannot be located, stop and
+report the missing dependency. Do not bypass or reimplement the completion
+gate ad hoc.
+
 If the canonical completion check fails, stop with `RETURN TO RESEARCH` and
 report the exact failing claims or evidence. Do not turn an incomplete closure
 into polished prose.
@@ -75,7 +79,8 @@ fraktur symbol, choose a conventional replacement and state the mapping once.
 
 ## Deliverables
 
-Create a new folder such as:
+Create a new folder such as the following, adding a numeric suffix when the
+dated path already exists:
 
 ```text
 proof_refactor_YYYYMMDD/
@@ -126,8 +131,9 @@ validate the mathematics by itself.
 
 Use the bundled validator:
 
-```text
-python scripts/validate_handoff.py --root PROJECT_ROOT PATH/TO/handoff.json
+```bash
+python <proof-refactor-directory>/scripts/validate_handoff.py \
+  --root PROJECT_ROOT PATH/TO/handoff.json
 ```
 
 The validator checks schema, path containment, source roots/digests, and the

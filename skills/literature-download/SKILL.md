@@ -1,6 +1,6 @@
 ---
 name: literature-download
-description: Download academic PDFs explicitly requested by the user or identified within a user-authorized bounded research task. Prefer legitimate open-access copies; when unavailable, use a user-authenticated Browser or Chrome session for institution-entitled publisher access. Never store credentials, bypass controls, purchase access, or crawl in bulk.
+description: Download academic PDFs explicitly requested by the user or identified within a user-authorized bounded research task. Prefer legitimate open-access copies; when unavailable and authorized, use an existing authenticated browser session for entitled access. Never store credentials, bypass controls, purchase access, or crawl in bulk.
 ---
 
 # Literature Download
@@ -18,10 +18,10 @@ papers unless requested.
    wrong-file download.
 2. Try a legitimate direct PDF first: arXiv, then an official open publisher,
    author, or institutional-repository copy when readily available.
-3. If no direct copy is available, use the Browser workflow. Honor an explicit
-   browser choice; otherwise prefer a Chrome profile that already has the
-   user's institutional session. Do not replace blocked authentication with a
-   different site merely to evade sign-in.
+3. If no direct copy is available and authenticated retrieval is authorized,
+   use an available browser session that the user has selected or already
+   authenticated. Do not assume institutional access or replace blocked
+   authentication with a different site merely to evade sign-in.
 4. If login, SSO, MFA, or CAPTCHA appears, stop and ask the user to complete it
    in that exact browser and tell Codex when it is ready. Never inspect, type,
    copy, store, or log passwords, cookies, tokens, local storage, recovery
