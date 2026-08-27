@@ -27,20 +27,10 @@
 3. `proof-to-paper` 将已验证的证明转换成论文手稿。
 
 ```mermaid
-flowchart TD
-    G["当前研究目标"] --> RL["research-loop"]
-    RL --> C{"严格完成检查是否通过？"}
-    C -- "否" --> RL
-    C -- "是" --> R["READY 就绪报告"]
-    R --> D{"用户决定"}
-    D -- "继续研究" --> RL
-    D -- "明确批准证明整理" --> PR["proof-refactor"]
-    PR --> H["有效且未过期的交接文件"]
-    H --> A["明确批准论文撰写"]
-    D -- "明确批准直接撰写" --> A
-    A --> PP["proof-to-paper"]
-    PP --> M["一份可投稿论文"]
-    D -- "停止" --> X["保留当前研究文件"]
+flowchart LR
+    RL["research-loop"] -->|"READY + 明确批准"| PR["proof-refactor"]
+    PR -->|"有效交接 + 明确批准"| PP["proof-to-paper"]
+    RL -. "明确批准直接撰写" .-> PP
 ```
 
 ## 本地安装
