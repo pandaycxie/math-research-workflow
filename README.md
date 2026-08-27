@@ -27,6 +27,24 @@ The skills form a staged workflow:
 2. `proof-refactor` reorganizes a completed proof for local verification.
 3. `proof-to-paper` converts the validated proof into manuscript form.
 
+```mermaid
+flowchart TD
+    G["Active research Goal"] --> RL["research-loop"]
+    RL --> C{"Strict completion check passes?"}
+    C -- "No" --> RL
+    C -- "Yes" --> R["READY report"]
+    R --> D{"User decision"}
+    D -- "Continue research" --> RL
+    D -- "Explicitly approve proof refactoring" --> PR["proof-refactor"]
+    PR --> H["Validated, current handoff"]
+    H --> A["Explicit drafting approval"]
+    D -- "Explicitly approve direct drafting" --> A
+    S["Completed standalone proof corpus"] --> A
+    A --> PP["proof-to-paper"]
+    PP --> M["One publication-ready LaTeX manuscript<br/>and frozen artifact manifest"]
+    D -- "Stop" --> X["Preserve the current research files"]
+```
+
 ## Install locally
 
 Copy only the skills you want into a project-local `.agents/skills` directory:

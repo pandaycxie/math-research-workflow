@@ -26,6 +26,24 @@
 2. `proof-refactor` 将已完成的证明重新组织为便于局部核查的形式。
 3. `proof-to-paper` 将已验证的证明转换成论文手稿。
 
+```mermaid
+flowchart TD
+    G["当前研究目标"] --> RL["research-loop"]
+    RL --> C{"严格完成检查是否通过？"}
+    C -- "否" --> RL
+    C -- "是" --> R["READY 就绪报告"]
+    R --> D{"用户决定"}
+    D -- "继续研究" --> RL
+    D -- "明确批准证明整理" --> PR["proof-refactor"]
+    PR --> H["有效且未过期的交接文件"]
+    H --> A["明确批准论文撰写"]
+    D -- "明确批准直接撰写" --> A
+    S["完整的独立证明材料"] --> A
+    A --> PP["proof-to-paper"]
+    PP --> M["一份可投稿的 LaTeX 手稿<br/>及冻结的 artifact manifest"]
+    D -- "停止" --> X["保留当前研究文件"]
+```
+
 ## 本地安装
 
 只将需要的 skills 复制到项目内的 `.agents/skills` 目录：
