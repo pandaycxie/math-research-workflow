@@ -9,7 +9,7 @@ After semantic review, create `handoff.json` from the canonical graph and proof
 bytes with the bundled helper:
 
 ```bash
-python <proof-refactor-directory>/scripts/validate_handoff.py \
+python3 <proof-refactor-directory>/scripts/validate_handoff.py \
   --root PROJECT_ROOT --create --proof proof.md \
   PATH/TO/handoff.json
 ```
@@ -40,7 +40,7 @@ mathematics by itself.
 For a later validation without rewriting the handoff, run:
 
 ```bash
-python <proof-refactor-directory>/scripts/validate_handoff.py \
+python3 <proof-refactor-directory>/scripts/validate_handoff.py \
   --root PROJECT_ROOT PATH/TO/handoff.json
 ```
 

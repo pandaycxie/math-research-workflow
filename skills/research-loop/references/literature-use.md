@@ -28,12 +28,12 @@ secondary citation is not enough for a load-bearing imported theorem.
    original paper, arXiv record, official publisher page, author copy, or
    institutional repository. Verify current literature claims online; do not
    infer absence or novelty from one failed query.
-3. If full text is necessary and missing, use an available literature-download
-   workflow only when the user has authorized it for the current task. Follow
-   that workflow's access, authentication, naming, verification, and no-bulk
-   rules. Ask the user to intervene when login, SSO, MFA, CAPTCHA, or another
-   user-only authentication step appears. Reuse a matching local copy instead
-   of downloading it again.
+3. If full text is necessary and missing, download only the identified paper or
+   bounded list under explicit authorization. Prefer a legitimate open copy.
+   Use authenticated browser access only when authorized, and ask the user to
+   complete login, SSO, MFA, or CAPTCHA; never inspect credentials, bypass
+   access controls, or purchase access. Reuse a matching local copy, and verify
+   that a new file is an openable PDF matching the DOI or title.
 
 ## Research memory
 

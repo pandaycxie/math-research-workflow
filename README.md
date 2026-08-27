@@ -1,5 +1,7 @@
 # Research Workflow Skills
 
+English | [简体中文](README.zh-CN.md)
+
 A small collection of Codex skills for long-running mathematical research,
 from durable research memory to proof refactoring and paper drafting.
 The workflow separates open-ended research, proof refinement, and manuscript production while preserving traceability between stages.
@@ -9,9 +11,8 @@ The workflow separates open-ended research, proof refinement, and manuscript pro
 | Skill | Purpose | Upstream dependency |
 | --- | --- | --- |
 | `research-loop` | Pursue an active research goal while keeping minimal file-backed memory. | None |
-| `literature-download` | Retrieve a small, authorized set of academic PDFs through legitimate access routes. | None |
 | `proof-refactor` | Turn a validated proof closure into a compact, locally checkable proof view. | `research-loop` |
-| `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or both upstream proof skills |
+| `proof-to-paper` | Convert a completed proof corpus or handoff into one publication-ready LaTeX manuscript. | Depends on input: none, `research-loop`, or `research-loop` plus `proof-refactor` |
 
 Each skill lives in its own folder under [`skills/`](skills/). Install any
 upstream dependency listed above with the skill that uses it. Start with
@@ -26,8 +27,22 @@ The skills form a staged workflow:
 2. `proof-refactor` reorganizes a completed proof for local verification.
 3. `proof-to-paper` converts the validated proof into manuscript form.
 
-`literature-download` supports targeted source retrieval when explicitly
-authorized for the current task.
+```mermaid
+flowchart TD
+    G["Active research Goal"] --> RL["research-loop"]
+    RL --> C{"Strict completion check passes?"}
+    C -- "No" --> RL
+    C -- "Yes" --> R["READY report"]
+    R --> D{"User decision"}
+    D -- "Continue research" --> RL
+    D -- "Explicitly approve proof refactoring" --> PR["proof-refactor"]
+    PR --> H["Validated, current handoff"]
+    H --> A["Explicit drafting approval"]
+    D -- "Explicitly approve direct drafting" --> A
+    A --> PP["proof-to-paper"]
+    PP --> M["One publication-ready manuscript"]
+    D -- "Stop" --> X["Preserve the current research files"]
+```
 
 ## Install locally
 
@@ -69,13 +84,13 @@ need a committed fixture directory.
 
 ## Trust boundary
 
-The validators check the structure and internal consistency of declared
-research memory: claim identifiers, dependency cycles, evidence paths, status
-rules, and review-digest freshness. They do **not** prove mathematical claims,
-judge whether cited sources are correct, or establish that an external program
-is safe. A human or trusted research process must review the actual arguments,
-source hypotheses, and reproduction commands before marking a claim `Proved`
-or recording a root digest.
+The research graph validator checks claim identifiers, dependency cycles,
+evidence paths, status rules, and review-digest freshness. The downstream
+helpers check declared paths, file sets, and byte hashes. They do **not** prove
+mathematical claims, validate citations, compile LaTeX, inspect PDFs, or
+establish that an external program is safe. A human or trusted research process
+must review the actual arguments, source hypotheses, reproduction commands,
+and final manuscript.
 
 ## Status
 

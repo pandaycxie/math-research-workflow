@@ -24,10 +24,15 @@ inspection, or request to draft a paper is not by itself authorization to
 create refactoring artifacts.
 
 Locate the research root and run the available `$research-loop` graph helper
-with `check --strict --complete`, passing `--root PROJECT_ROOT` when needed. Do
-not assume a repository-local copy of the helper. Use the verified Goal roots
-and their complete `requires` closure as scope; the readiness report is only a
-routing summary.
+with `check --strict --complete --readability`, passing `--root PROJECT_ROOT`
+when needed. Do not assume a repository-local copy of the helper. Use the
+verified Goal roots and their complete `requires` closure as scope; the
+readiness report is only a routing summary.
+
+For each root, use `order ROOT` for dependency-first claim IDs and titles, then
+use `show CLAIM` for exact bounded sections. Use `find QUERY` only when the
+relevant claim is not yet known. Treat IDs and titles as navigation rather than
+mathematical content or reader-facing terminology.
 
 If the required `$research-loop` skill or helper cannot be located, stop and
 report the missing dependency. Do not bypass or reimplement the completion
@@ -71,16 +76,12 @@ or certificate conclusion that performs the inference. Merely naming a tool
 such as an Agmon estimate, Hellmann--Feynman, cooperativity, or standard
 asymptotic integration is not an explanation.
 
-For analysis-oriented work, do not introduce fraktur notation. Prefer
-ordinary Roman, Greek, or calligraphic symbols; if the canonical source uses a
-fraktur symbol, choose a conventional replacement and state the mapping once.
-
 ## Deliverables
 
 Initialize a nonconflicting dated output folder with the bundled helper:
 
 ```bash
-python <proof-refactor-directory>/scripts/validate_handoff.py \
+python3 <proof-refactor-directory>/scripts/validate_handoff.py \
   --root PROJECT_ROOT --init
 ```
 
@@ -92,12 +93,10 @@ proof_refactor_YYYYMMDD/
 └── handoff.json
 ```
 
-`proof.md` is not a manuscript. Unless the user explicitly requests another
-language, write every generated file in English, including prose in Markdown,
-comments, tables, and ancillary documentation. Conversation may follow the
-user's language. The initializer creates an empty `proof.md`; the handoff
-helper creates `handoff.json` after semantic review. Include only what the
-proof needs:
+`proof.md` is not a manuscript. Use the language requested by the user;
+otherwise preserve the dominant language of the canonical proof material. The
+initializer creates an empty `proof.md`; the handoff helper creates
+`handoff.json` after semantic review. Include only what the proof needs:
 
 - the exact theorem scope and source roots;
 - a concise account of the core mathematical idea;

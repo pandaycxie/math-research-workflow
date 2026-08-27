@@ -18,6 +18,24 @@ MANIFEST_NAME = "artifact-manifest.json"
 REQUIRED_FILES = ("main.tex", "references.bib", "output/pdf/main.pdf")
 TOP_LEVEL_KEYS = {"schema_version", "kind", "files"}
 SHA256_DIGEST = re.compile(r"sha256:[0-9a-f]{64}$")
+IGNORED_DIRECTORIES = {".git", "__pycache__"}
+IGNORED_NAMES = {".DS_Store"}
+IGNORED_ENDINGS = (
+    ".aux",
+    ".bcf",
+    ".blg",
+    ".fdb_latexmk",
+    ".fls",
+    ".lof",
+    ".log",
+    ".lot",
+    ".out",
+    ".run.xml",
+    ".synctex.gz",
+    ".toc",
+    ".swp",
+    "~",
+)
 
 
 class DuplicateKeyError(ValueError):
@@ -61,7 +79,11 @@ def required_paths(manuscript: Path) -> tuple[dict[str, Path], list[str]]:
     paths: dict[str, Path] = {}
     errors: list[str] = []
     for relative in REQUIRED_FILES:
-        path = (manuscript / relative).resolve()
+        try:
+            path = (manuscript / relative).resolve()
+        except (OSError, RuntimeError) as error:
+            errors.append(f"cannot resolve required file: {relative} ({error})")
+            continue
         if not is_within(path, manuscript):
             errors.append(f"required file escapes manuscript directory: {relative}")
         elif not path.is_file():
@@ -72,6 +94,60 @@ def required_paths(manuscript: Path) -> tuple[dict[str, Path], list[str]]:
                     handle.read(1)
             except OSError as error:
                 errors.append(f"required file is not readable: {relative} ({error})")
+            else:
+                paths[relative] = path
+    return paths, errors
+
+
+def is_ignored(relative: Path) -> bool:
+    name = relative.name
+    if relative.as_posix() == MANIFEST_NAME:
+        return True
+    if any(part in IGNORED_DIRECTORIES for part in relative.parts):
+        return True
+    if name in IGNORED_NAMES or any(
+        name.endswith(ending) for ending in IGNORED_ENDINGS
+    ):
+        return True
+    if relative.parts and relative.parts[0] == "output":
+        return relative.as_posix() != "output/pdf/main.pdf"
+    return False
+
+
+def artifact_paths(manuscript: Path) -> tuple[dict[str, Path], list[str]]:
+    paths, errors = required_paths(manuscript)
+    try:
+        candidates = sorted(
+            manuscript.rglob("*"),
+            key=lambda path: path.relative_to(manuscript).as_posix(),
+        )
+    except OSError as error:
+        errors.append(f"cannot scan manuscript directory: {error}")
+        return paths, errors
+
+    for candidate in candidates:
+        relative_path = candidate.relative_to(manuscript)
+        relative = relative_path.as_posix()
+        if relative in REQUIRED_FILES or is_ignored(relative_path):
+            continue
+        if not candidate.is_file() and not candidate.is_symlink():
+            continue
+
+        try:
+            path = candidate.resolve()
+        except (OSError, RuntimeError) as error:
+            errors.append(f"cannot resolve artifact file: {relative} ({error})")
+            continue
+        if not is_within(path, manuscript):
+            errors.append(f"artifact file escapes manuscript directory: {relative}")
+        elif not path.is_file():
+            errors.append(f"artifact file is missing: {relative}")
+        else:
+            try:
+                with path.open("rb") as handle:
+                    handle.read(1)
+            except OSError as error:
+                errors.append(f"artifact file is not readable: {relative} ({error})")
             else:
                 paths[relative] = path
     return paths, errors
@@ -107,7 +183,9 @@ def make_manifest(paths: dict[str, Path]) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": KIND,
-        "files": {relative: file_sha256(paths[relative]) for relative in REQUIRED_FILES},
+        "files": {
+            relative: file_sha256(paths[relative]) for relative in sorted(paths)
+        },
     }
 
 
@@ -118,15 +196,15 @@ def freeze(manuscript: Path, replace: bool) -> int:
             {"ok": False, "errors": [f"manuscript is not a directory: {manuscript}"]}
         )
         return 1
-    paths, errors = required_paths(manuscript)
+    paths, errors = artifact_paths(manuscript)
     if errors:
         print_json({"ok": False, "errors": errors})
         return 1
 
     manifest = make_manifest(paths)
     manifest_path = manuscript / MANIFEST_NAME
-    if manifest_path.exists() and not is_within(manifest_path.resolve(), manuscript):
-        print_json({"ok": False, "errors": ["manifest escapes manuscript directory"]})
+    if manifest_path.is_symlink():
+        print_json({"ok": False, "errors": ["manifest must not be a symbolic link"]})
         return 1
     encoded = json.dumps(manifest, indent=2, ensure_ascii=False) + "\n"
     if manifest_path.exists() and not replace:
@@ -163,10 +241,10 @@ def check(manuscript: Path) -> int:
             {"ok": False, "errors": [f"manuscript is not a directory: {manuscript}"]}
         )
         return 1
-    paths, errors = required_paths(manuscript)
+    paths, errors = artifact_paths(manuscript)
     manifest_path = manuscript / MANIFEST_NAME
-    if manifest_path.exists() and not is_within(manifest_path.resolve(), manuscript):
-        errors.append("manifest escapes manuscript directory")
+    if manifest_path.is_symlink():
+        errors.append("manifest must not be a symbolic link")
         print_json({"ok": False, "errors": errors})
         return 1
     if not manifest_path.is_file():
@@ -202,10 +280,25 @@ def check(manuscript: Path) -> int:
         if not isinstance(files, dict):
             errors.append("files must be a JSON object")
         else:
-            if set(files) != set(REQUIRED_FILES):
-                errors.append("files keys must equal the required artifact paths")
-            for relative in REQUIRED_FILES:
-                expected = files.get(relative)
+            manifest_files = set(files)
+            current_files = set(paths)
+            missing_required = sorted(set(REQUIRED_FILES) - manifest_files)
+            unfrozen = sorted(current_files - manifest_files)
+            missing_current = sorted(manifest_files - current_files)
+            if missing_required:
+                errors.append(
+                    "manifest is missing required artifact paths: "
+                    + ", ".join(missing_required)
+                )
+            if unfrozen:
+                errors.append("unfrozen manuscript files: " + ", ".join(unfrozen))
+            if missing_current:
+                errors.append(
+                    "frozen manuscript files are missing: "
+                    + ", ".join(missing_current)
+                )
+            for relative in sorted(files):
+                expected = files[relative]
                 if not isinstance(expected, str) or not SHA256_DIGEST.fullmatch(expected):
                     errors.append(f"invalid SHA-256 digest for {relative}")
                 elif relative in paths:
@@ -233,7 +326,7 @@ def main() -> int:
     init_parser.add_argument("--root", type=Path, required=True, help="Project root")
 
     freeze_parser = subparsers.add_parser(
-        "freeze", help="Hash the reviewed source, bibliography, and PDF"
+        "freeze", help="Hash the reviewed manuscript files and final PDF"
     )
     freeze_parser.add_argument("--manuscript", type=Path, required=True)
     freeze_parser.add_argument(
@@ -241,7 +334,7 @@ def main() -> int:
     )
 
     check_parser = subparsers.add_parser(
-        "check", help="Verify required files and frozen hashes"
+        "check", help="Verify the complete frozen manuscript file set"
     )
     check_parser.add_argument("--manuscript", type=Path, required=True)
 

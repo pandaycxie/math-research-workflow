@@ -88,7 +88,84 @@ class PaperArtifactsCLITest(unittest.TestCase):
         checked, payload = self.run_command("check", "--manuscript", str(manuscript))
 
         self.assertEqual(checked.returncode, 1)
-        self.assertTrue(any("digest mismatch for main.tex" in error for error in payload["errors"]))
+        self.assertTrue(
+            any("digest mismatch for main.tex" in error for error in payload["errors"])
+        )
+
+    def test_freeze_tracks_auxiliary_sources_and_assets(self) -> None:
+        manuscript = self.initialize()
+        self.complete_artifact(manuscript)
+        (manuscript / "sections").mkdir()
+        (manuscript / "figures").mkdir()
+        section = manuscript / "sections" / "proof.tex"
+        section.write_text("proof\n", encoding="utf-8")
+        (manuscript / "figures" / "plot.pdf").write_bytes(b"%PDF-figure\n")
+        (manuscript / "local.sty").write_text("% style\n", encoding="utf-8")
+
+        frozen, payload = self.run_command("freeze", "--manuscript", str(manuscript))
+        self.assertEqual(frozen.returncode, 0, frozen.stderr)
+        self.assertEqual(
+            set(payload["manifest"]["files"]),
+            {
+                "figures/plot.pdf",
+                "local.sty",
+                "main.tex",
+                "output/pdf/main.pdf",
+                "references.bib",
+                "sections/proof.tex",
+            },
+        )
+
+        section.write_text("changed proof\n", encoding="utf-8")
+        checked, check_payload = self.run_command(
+            "check", "--manuscript", str(manuscript)
+        )
+        self.assertEqual(checked.returncode, 1)
+        self.assertTrue(
+            any(
+                "digest mismatch for sections/proof.tex" in error
+                for error in check_payload["errors"]
+            )
+        )
+
+    def test_check_detects_source_added_after_freeze(self) -> None:
+        manuscript = self.initialize()
+        self.complete_artifact(manuscript)
+        frozen, _ = self.run_command("freeze", "--manuscript", str(manuscript))
+        self.assertEqual(frozen.returncode, 0, frozen.stderr)
+
+        (manuscript / "appendix.tex").write_text("appendix\n", encoding="utf-8")
+        checked, payload = self.run_command("check", "--manuscript", str(manuscript))
+
+        self.assertEqual(checked.returncode, 1)
+        self.assertTrue(
+            any(
+                "unfrozen manuscript files: appendix.tex" in error
+                for error in payload["errors"]
+            )
+        )
+
+    def test_build_outputs_and_temporary_files_are_ignored(self) -> None:
+        manuscript = self.initialize()
+        self.complete_artifact(manuscript)
+        (manuscript / "main.aux").write_text("auxiliary\n", encoding="utf-8")
+        (manuscript / "main.log").write_text("log\n", encoding="utf-8")
+        (manuscript / ".DS_Store").write_bytes(b"metadata")
+        (manuscript / "output" / "draft.pdf").write_bytes(b"%PDF-draft\n")
+
+        frozen, payload = self.run_command("freeze", "--manuscript", str(manuscript))
+        self.assertEqual(frozen.returncode, 0, frozen.stderr)
+        self.assertEqual(
+            set(payload["manifest"]["files"]),
+            {"main.tex", "references.bib", "output/pdf/main.pdf"},
+        )
+
+        (manuscript / "main.aux").write_text("changed\n", encoding="utf-8")
+        (manuscript / "output" / "draft.pdf").write_bytes(b"changed\n")
+        checked, check_payload = self.run_command(
+            "check", "--manuscript", str(manuscript)
+        )
+        self.assertEqual(checked.returncode, 0, check_payload)
 
     def test_refreeze_requires_explicit_replace(self) -> None:
         manuscript = self.initialize()
@@ -116,7 +193,6 @@ class PaperArtifactsCLITest(unittest.TestCase):
         self.complete_artifact(manuscript)
         with tempfile.TemporaryDirectory() as external_directory:
             external = Path(external_directory) / "manifest.json"
-            external.write_text("{}\n", encoding="utf-8")
             link = manuscript / "artifact-manifest.json"
             try:
                 link.symlink_to(external)
@@ -126,7 +202,32 @@ class PaperArtifactsCLITest(unittest.TestCase):
                 "freeze", "--manuscript", str(manuscript), "--replace"
             )
             self.assertEqual(frozen.returncode, 1)
-            self.assertTrue(any("manifest escapes" in item for item in payload["errors"]))
+            self.assertTrue(
+                any(
+                    "manifest must not be a symbolic link" in item
+                    for item in payload["errors"]
+                )
+            )
+
+    def test_artifact_symlink_escape_is_rejected(self) -> None:
+        manuscript = self.initialize()
+        self.complete_artifact(manuscript)
+        with tempfile.TemporaryDirectory() as external_directory:
+            external = Path(external_directory) / "figure.pdf"
+            external.write_bytes(b"%PDF-external\n")
+            link = manuscript / "figure.pdf"
+            try:
+                link.symlink_to(external)
+            except OSError as error:
+                self.skipTest(f"symlinks unavailable: {error}")
+
+            frozen, payload = self.run_command(
+                "freeze", "--manuscript", str(manuscript)
+            )
+            self.assertEqual(frozen.returncode, 1)
+            self.assertTrue(
+                any("artifact file escapes" in item for item in payload["errors"])
+            )
 
 
 if __name__ == "__main__":
