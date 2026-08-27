@@ -97,6 +97,10 @@ The root uses KR-001.
         self.assertEqual(graph["roots"], [])
         self.assertEqual(graph["requires"], {})
 
+        completed, payload = self.run_json("next-id")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["next_id"], "KR-001")
+
         completed = self.run_command("init")
         self.assertEqual(completed.returncode, 2)
         self.assertIn("refusing to overwrite", completed.stderr)
@@ -108,6 +112,79 @@ The root uses KR-001.
         self.assertFalse((self.root / "KEY_RESULTS.md").exists())
         self.assertFalse((self.root / "KEY_RESULTS.graph.json").exists())
         self.assertFalse((self.root / "RESEARCH_LOG.md").exists())
+
+    def test_next_id_uses_append_only_number_and_accepts_existing_mnemonic(self) -> None:
+        self.write_ledger(
+            """# Fixture
+
+### KR-007-FULLRADIUSL3 — Full-radius L3 estimate [Proved]
+
+The quadratic form has a positive lower bound.
+
+### KR-010 — A later numerical claim [Open]
+
+The claim remains open.
+"""
+        )
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": [],
+                "requires": {
+                    "KR-007-FULLRADIUSL3": [],
+                    "KR-010": [],
+                },
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+
+        completed, payload = self.run_json("next-id")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["next_id"], "KR-011")
+
+    def test_find_searches_ids_and_titles_with_bounded_output(self) -> None:
+        self.write_ledger(
+            """# Fixture
+
+### KR-001 — Uniform coercivity for radial perturbations [Proved]
+
+First result.
+
+### KR-002 — Uniform coercivity for angular perturbations [Open]
+
+Second result.
+
+### KR-003 — Compactness of minimizing sequences [Conditional]
+
+Third result.
+"""
+        )
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": [],
+                "requires": {"KR-001": [], "KR-002": []},
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+
+        completed, payload = self.run_json(
+            "find", "UNIFORM coercivity", "--limit", "1"
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["total_matches"], 2)
+        self.assertTrue(payload["truncated"])
+        self.assertEqual(payload["matches"][0]["id"], "KR-001")
+
+        completed, payload = self.run_json("find", "KR-003")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(
+            payload["matches"][0]["title"], "Compactness of minimizing sequences"
+        )
 
     def test_schema_v2_is_readable_but_cannot_complete(self) -> None:
         self.make_basic_fixture(schema_version=2)
@@ -325,6 +402,7 @@ Real claim continuation.
         completed, payload = self.run_json("summary", "KR-002")
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertTrue(payload["configured_root"])
+        self.assertEqual(payload["target_title"], "Root theorem")
         self.assertEqual(payload["closure_size"], 2)
         self.assertEqual(payload["status_counts"], {"Proved": 2})
         self.assertEqual(payload["unresolved"], [])
@@ -347,6 +425,7 @@ Real claim continuation.
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(payload["status_counts"], {"Open": 1, "Proved": 1})
         self.assertEqual(payload["unresolved"], [{"id": "KR-002", "status": "Open"}])
+        self.assertEqual(payload["unresolved_titles"], {"KR-002": "Root theorem"})
         self.assertEqual(payload["digest_state"], "missing")
         self.assertRegex(payload["expected_digest"], r"^sha256:[0-9a-f]{64}$")
         self.assertFalse(payload["ready"])
@@ -463,11 +542,17 @@ Background.
         completed, payload = self.run_json("order", "KR-002")
         self.assertEqual(completed.returncode, 0)
         self.assertEqual(payload["order"], ["KR-001", "KR-002"])
+        self.assertEqual(
+            payload["titles"],
+            {"KR-001": "Upstream lemma", "KR-002": "Root theorem"},
+        )
 
         completed, payload = self.run_json("impact", "KR-001")
         self.assertEqual(completed.returncode, 0)
         self.assertEqual(payload["direct"], ["KR-002"])
         self.assertEqual(payload["transitive"], ["KR-002"])
+        self.assertEqual(payload["claim_title"], "Upstream lemma")
+        self.assertEqual(payload["titles"], {"KR-002": "Root theorem"})
 
         completed = self.run_command("dot", "--target", "KR-002")
         self.assertEqual(completed.returncode, 0)
@@ -494,9 +579,43 @@ Background.
         self.assertIn("too large for bounded show", completed.stderr)
         self.assertEqual(completed.stdout, "")
 
+        completed, payload = self.run_json("check", "--readability")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["readability"]["oversized_sections"], 1)
+        self.assertTrue(
+            any(
+                "oversized ledger claim sections: 1" in item
+                for item in payload["warnings"]
+            )
+        )
+
         completed = self.run_command("show", "KR-001", "--full")
         self.assertEqual(completed.returncode, 0)
         self.assertIn("Line 400.", completed.stdout)
+
+    def test_readability_warning_does_not_block_completion(self) -> None:
+        graph = self.make_basic_fixture()
+        self.stamp_root(graph)
+        ledger = (self.root / "KEY_RESULTS.md").read_text(encoding="utf-8")
+        self.write_ledger(
+            ledger
+            + """
+### KR-003-MEMO — Background note without a body [Open]
+"""
+        )
+
+        completed, payload = self.run_json("check", "--complete", "--readability")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["readability"]["empty_sections"], 1)
+        self.assertEqual(payload["readability"]["mnemonic_ids"], 1)
+        self.assertTrue(
+            any(
+                "empty ledger claim sections: 1" in item
+                for item in payload["warnings"]
+            )
+        )
 
 
 if __name__ == "__main__":

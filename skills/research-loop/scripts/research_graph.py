@@ -18,8 +18,11 @@ ALLOWED_STATUSES = ("Open", "Conditional", "Proved", "Rejected", "Superseded")
 SUPPORTED_SCHEMA_VERSIONS = (2, 3)
 SHOW_MAX_LINES = 400
 SHOW_MAX_BYTES = 32 * 1024
-CLAIM_TOKEN = r"KR-[0-9]+(?:-[A-Z]+)?"
+FIND_DEFAULT_LIMIT = 20
+FIND_MAX_LIMIT = 100
+CLAIM_TOKEN = r"KR-[0-9]+(?:-[A-Z][A-Z0-9]*)?"
 CLAIM_ID = re.compile(rf"{CLAIM_TOKEN}$")
+CLAIM_NUMBER = re.compile(r"KR-([0-9]+)(?:-[A-Z][A-Z0-9]*)?$")
 SHA256_DIGEST = re.compile(r"sha256:[0-9a-f]{64}$")
 HEADING = re.compile(
     r"^###\s+(KR-\S+)\s+[—-]\s+(.+?)\s+\[([^\]]+)\]\s*$",
@@ -32,7 +35,7 @@ INITIAL_LEDGER = """# Key Results
 
 Add important claims as:
 
-`### KR-001 — Exact claim title [Open]`
+`### KR-001 — Mathematical object and conclusion [Open]`
 """
 
 INITIAL_LOG = """# Research Log
@@ -85,6 +88,18 @@ def resolve_graph(
 
 def print_json(value: Any) -> None:
     print(json.dumps(value, indent=2, ensure_ascii=False))
+
+
+def bounded_find_limit(value: str) -> int:
+    try:
+        limit = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("limit must be an integer") from error
+    if not 1 <= limit <= FIND_MAX_LIMIT:
+        raise argparse.ArgumentTypeError(
+            f"limit must be between 1 and {FIND_MAX_LIMIT}"
+        )
+    return limit
 
 
 def initialize_memory(root: Path, graph_path: Path, dry_run: bool) -> None:
@@ -208,6 +223,44 @@ def load_ledger(
             "section": canonical_section(text[section_start:section_end]),
         }
     return claims
+
+
+def next_claim_id(ledger_claims: dict[str, dict[str, str | None]]) -> str:
+    numbers: list[tuple[int, int]] = []
+    for claim_id in ledger_claims:
+        match = CLAIM_NUMBER.fullmatch(claim_id)
+        if match is not None:
+            number = match.group(1)
+            numbers.append((int(number), len(number)))
+    next_number = max((number for number, _ in numbers), default=0) + 1
+    width = max((width for _, width in numbers), default=3)
+    return f"KR-{next_number:0{max(3, width)}d}"
+
+
+def find_claims(
+    query: str,
+    ledger_claims: dict[str, dict[str, str | None]],
+    limit: int,
+) -> tuple[list[dict[str, str | None]], int]:
+    terms = query.casefold().split()
+    if not terms:
+        raise ValueError("find query must contain a non-whitespace character")
+    matches: list[dict[str, str | None]] = []
+    total = 0
+    for claim_id, claim in ledger_claims.items():
+        title = str(claim["title"])
+        haystack = f"{claim_id} {title}".casefold()
+        if all(term in haystack for term in terms):
+            total += 1
+            if len(matches) < limit:
+                matches.append(
+                    {
+                        "id": claim_id,
+                        "title": title,
+                        "status": claim["status"],
+                    }
+                )
+    return matches, total
 
 
 def string_list(value: Any, field: str, errors: list[str]) -> list[str]:
@@ -562,6 +615,53 @@ def strict_findings(
     return errors, warnings, current_digests
 
 
+def readability_findings(
+    ledger_claims: dict[str, dict[str, str | None]],
+    verbose: bool = False,
+) -> tuple[dict[str, int], list[str]]:
+    """Report structural proxies only; do not judge mathematical vocabulary."""
+    empty: list[str] = []
+    oversized: list[str] = []
+    mnemonic_ids = 0
+    for claim_id, claim in ledger_claims.items():
+        section = str(claim["section"])
+        body = "\n".join(section.splitlines()[1:]).strip()
+        if not body:
+            empty.append(claim_id)
+        if (
+            len(section.splitlines()) > SHOW_MAX_LINES
+            or len(section.encode("utf-8")) > SHOW_MAX_BYTES
+        ):
+            oversized.append(claim_id)
+        if CLAIM_NUMBER.fullmatch(claim_id) and claim_id.count("-") == 2:
+            mnemonic_ids += 1
+
+    warnings: list[str] = []
+    for label, claim_ids in (
+        ("empty ledger claim sections", empty),
+        ("oversized ledger claim sections", oversized),
+    ):
+        if not claim_ids:
+            continue
+        if verbose:
+            warnings.append(f"{label}: " + ", ".join(claim_ids))
+        else:
+            warnings.append(
+                f"{label}: {len(claim_ids)} "
+                "(use --strict --readability --verbose for IDs)"
+            )
+
+    return (
+        {
+            "claims_checked": len(ledger_claims),
+            "empty_sections": len(empty),
+            "oversized_sections": len(oversized),
+            "mnemonic_ids": mnemonic_ids,
+        },
+        warnings,
+    )
+
+
 def summarize_root(
     schema_version: Any,
     root: Path,
@@ -616,10 +716,15 @@ def summarize_root(
 
     return {
         "target": target,
+        "target_title": ledger_claims[target]["title"],
         "configured_root": configured_root,
         "closure_size": len(order),
         "status_counts": dict(sorted(status_counts.items())),
         "unresolved": unresolved,
+        "unresolved_titles": {
+            item["id"]: ledger_claims[str(item["id"])]["title"]
+            for item in unresolved
+        },
         "evidence_files": len(evidence_paths),
         "digest_state": digest_state,
         "expected_digest": expected_digest,
@@ -764,6 +869,24 @@ def main() -> int:
         action="store_true",
         help="Expand strict warning IDs and edges",
     )
+    check_parser.add_argument(
+        "--readability",
+        action="store_true",
+        help="Report non-blocking structural readability risks",
+    )
+    commands.add_parser(
+        "next-id", help="Return the next append-only numeric claim ID"
+    )
+    find_parser = commands.add_parser(
+        "find", help="Search claim IDs and titles with bounded output"
+    )
+    find_parser.add_argument("query")
+    find_parser.add_argument(
+        "--limit",
+        type=bounded_find_limit,
+        default=FIND_DEFAULT_LIMIT,
+        help=f"Maximum matches to return (default: {FIND_DEFAULT_LIMIT})",
+    )
     summary_parser = commands.add_parser(
         "summary", help="Summarize one indexed claim closure"
     )
@@ -809,6 +932,7 @@ def main() -> int:
         ) = validate(data, root)
         if args.command == "check":
             current_digests: dict[str, str] = {}
+            readability: dict[str, int] | None = None
             if args.strict and not errors:
                 strict_errors, strict_warnings, current_digests = strict_findings(
                     root,
@@ -822,6 +946,11 @@ def main() -> int:
                 )
                 errors.extend(strict_errors)
                 warnings.extend(strict_warnings)
+            if args.readability:
+                readability, readability_warnings = readability_findings(
+                    ledger_claims, args.verbose
+                )
+                warnings.extend(readability_warnings)
             if args.complete and not errors:
                 completion_problems, current_digests = completion_errors(
                     data.get("schema_version"),
@@ -848,6 +977,7 @@ def main() -> int:
                     "complete": args.complete,
                     "strict": args.strict,
                     "verbose": args.verbose,
+                    "readability": readability,
                     "roots": roots,
                     "current_root_digests": current_digests,
                     "claims": len(requires),
@@ -862,7 +992,20 @@ def main() -> int:
             print_json({"ok": False, "warnings": warnings, "errors": errors})
             return 1
 
-        if args.command == "summary":
+        if args.command == "next-id":
+            print_json({"next_id": next_claim_id(ledger_claims)})
+        elif args.command == "find":
+            matches, total = find_claims(args.query, ledger_claims, args.limit)
+            print_json(
+                {
+                    "query": args.query,
+                    "limit": args.limit,
+                    "total_matches": total,
+                    "truncated": total > args.limit,
+                    "matches": matches,
+                }
+            )
+        elif args.command == "summary":
             summary = summarize_root(
                 data.get("schema_version"),
                 root,
@@ -899,13 +1042,30 @@ def main() -> int:
                 )
             print(section, end="")
         elif args.command == "order":
+            order = closure_order(requires, args.target)
             print_json(
-                {"target": args.target, "order": closure_order(requires, args.target)}
+                {
+                    "target": args.target,
+                    "order": order,
+                    "titles": {
+                        claim_id: ledger_claims[claim_id]["title"]
+                        for claim_id in order
+                    },
+                }
             )
         elif args.command == "impact":
             direct, transitive = impact(requires, args.claim)
             print_json(
-                {"claim": args.claim, "direct": direct, "transitive": transitive}
+                {
+                    "claim": args.claim,
+                    "claim_title": ledger_claims[args.claim]["title"],
+                    "direct": direct,
+                    "transitive": transitive,
+                    "titles": {
+                        claim_id: ledger_claims[claim_id]["title"]
+                        for claim_id in transitive
+                    },
+                }
             )
         elif args.command == "dot":
             print_dot(requires, ledger_claims, args.target)

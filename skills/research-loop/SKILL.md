@@ -32,6 +32,15 @@ Maintain only these research-memory records:
 - `RESEARCH_LOG.md`: reusable derivations, diagnostics, failed routes, and
   consequential decisions.
 
+Write both Markdown records for a mathematician who knows the subject but has
+not seen the conversation. A claim heading must state the mathematical object
+and the conclusion, open question, or obstruction in its relevant scope. Begin
+each claim or log entry with its literal mathematical statement or outcome;
+prefer formulas and established terminology to coined workflow metaphors. An
+identifier or shorthand is a navigation aid, not a substitute for an estimate,
+implication, obstruction, or theorem. Define any nonstandard term before
+relying on it.
+
 Read [graph-memory.md](references/graph-memory.md) before creating or migrating
 the graph, changing dependency structure, revising an upstream claim, managing
 evidence or digests, or running a graph audit.
@@ -43,8 +52,10 @@ claim must state its real scope and may depend only on proved prerequisites.
 Only explicit `requires` edges are hard dependencies; exploratory and
 alternative routes need not enter a Goal root's closure.
 
-Allocate the next unused numeric `KR-<number>` ID. Append an uppercase
-alphabetic mnemonic only for an important result needing a stable name.
+Use the helper's `next-id` command for a new claim and prefer the numeric ID
+alone. An optional uppercase suffix is allowed only when it is one established
+mathematical term already used in the literal title. Do not create compressed
+compound labels or rename existing IDs solely to enforce this convention.
 
 Numerical, empirical, or exploratory support remains `Conditional` unless it
 meets the Goal's declared proof standard. If a `Proved` claim in the active
@@ -80,8 +91,9 @@ locate one result.
 - Change graph roots only when the Goal or its success criterion changes.
 - Append to the log only when an argument, experiment, failure, or decision is
   likely to matter later. Ordinary reasoning needs no file update.
-- Keep rejected routes in the log so they are not repeated without new
-  information.
+- Give a log entry a heading that states its question or conclusion. For a
+  rejected route, record the exact failed implication, estimate, sign, or
+  counterexample so the route is not repeated without new information.
 
 At a material research-progress checkpoint, state the current obstruction and
 what changed. If repeated checkpoints cannot identify a narrower obstruction,

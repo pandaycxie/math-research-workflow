@@ -19,12 +19,14 @@ existing one. Its graph starts as:
 {"schema_version": 3, "ledger": "KEY_RESULTS.md", "roots": [], "requires": {}, "evidence": {}, "root_digests": {}}
 ```
 
-Every claim ID has the form `KR-<number>` or
-`KR-<number>-<LETTERS>`, such as `KR-001` or
-`KR-030-CROSSING`. Allocate the next unused number and keep zero-padding
-consistent. Reserve an uppercase mnemonic for important conclusions that
-benefit from a memorable stable name; routine lemmas, diagnostics, intermediate
-claims, and open questions use the numeric form.
+Every claim ID has the form `KR-<number>` or `KR-<number>-<MNEMONIC>`, such as
+`KR-001`, `KR-030-COERCIVITY`, or the legacy form `KR-189-FULLRADIUSL3`. A
+mnemonic starts with an uppercase letter and may contain uppercase letters or
+digits. Use `next-id` to allocate the next append-only number and keep
+zero-padding consistent. Prefer the numeric form. An optional suffix must be
+one established mathematical term already present in the literal title; do not
+compress several ideas into a newly coined label. Existing mnemonic IDs remain
+valid and need not be renamed.
 
 Format headings as `### KR-ID — Exact claim title [Status]`. Ordinary
 `###` subheadings inside a claim remain part of that claim and its review
@@ -36,6 +38,27 @@ Use exactly `Open`, `Conditional`, `Proved`, `Rejected`, or
 proved/open content into separate claims. A logically proved implication may
 state its assumptions in its exact scope; do not disguise an unresolved Goal
 as an unconditional proved root.
+
+## Readable claim and log records
+
+The identifier helps retrieval; the title and first paragraph must carry the
+mathematics. In `KEY_RESULTS.md`:
+
+- state the object and the scoped conclusion, open question, or obstruction in
+  the title;
+- put the exact estimate, implication, obstruction, theorem, or question first;
+- retain only the shortest checkable support, limitations, and useful file
+  pointers in the claim; keep exploration and chronology in the log.
+
+In `RESEARCH_LOG.md`, use a literal question or conclusion as the heading and
+state the outcome first. A failed route should identify the failed inequality,
+sign, implication, or counterexample rather than only name the route. Do not
+force a rigid template when the mathematics is already locally clear.
+
+For example, replace “the coercivity gate closes” with a literal statement such
+as `$Q[u] \ge c\lVert u\rVert^2$ on the orthogonal complement of the kernel`.
+Replace “the compactness bridge fails” with the actual missing implication or
+counterexample.
 
 ## Hard dependencies and revision
 
@@ -75,13 +98,16 @@ never chooses a research step.
 - `check --strict`: audit all status labels and listed evidence paths.
   Unindexed ledger claims and transitively implied edges are compact warnings;
   add `--verbose` only when their identities are needed.
+- `check --readability`: report only structural readability risks and an
+  informational mnemonic count, without changing validity or completion.
+- `next-id`: return the next append-only numeric claim ID.
+- `find QUERY`: search claim IDs and literal titles with bounded output.
 - `summary TARGET`: show one indexed closure's size, statuses, evidence,
-  digest freshness, and readiness.
+  digest freshness, readiness, and target title.
 - `show CLAIM`: print one bounded exact ledger section; use `--full` only
   after deliberately deciding that an oversized section is necessary.
-- `impact CLAIM`: list descendants requiring review after an upstream
-  revision.
-- `order CLAIM`: print a dependency-first closure order.
+- `impact CLAIM`: list descendants and their titles after an upstream revision.
+- `order CLAIM`: print a dependency-first closure order with titles.
 - `dot`: emit a Graphviz view.
 
 The helper discovers the nearest parent graph. Pass `--root PATH` when the
