@@ -23,9 +23,16 @@ class ValidateHandoffCLITest(unittest.TestCase):
         self.output.mkdir()
         self.graph = self.root / "KEY_RESULTS.graph.json"
         self.proof = self.output / "proof.md"
+        self.proof_graph = self.output / "proof.graph.json"
         self.handoff = self.output / "handoff.json"
-        self.proof.write_text("# Refactored proof\n", encoding="utf-8")
+        self.proof.write_text(
+            "# Refactored proof\n\n"
+            "### PF-001 — Source theorems\n\n"
+            "Both source theorems hold.\n",
+            encoding="utf-8",
+        )
         self.write_graph(self.default_graph())
+        self.write_proof_graph(self.default_proof_graph())
         self.write_handoff(self.default_handoff())
 
     def tearDown(self) -> None:
@@ -35,11 +42,31 @@ class ValidateHandoffCLITest(unittest.TestCase):
         return {
             "roots": ["KR-001", "KR-002"],
             "root_digests": {"KR-001": DIGEST_ONE, "KR-002": DIGEST_TWO},
+            "requires": {"KR-001": [], "KR-002": []},
+        }
+
+    def default_proof_graph(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": "proof-refactor-dag",
+            "roots": ["PF-001"],
+            "nodes": {
+                "PF-001": {
+                    "title": "Source theorems",
+                    "statement": "Both source theorems hold.",
+                    "requires": [],
+                    "sources": ["KR-001", "KR-002"],
+                }
+            },
         }
 
     def proof_digest(self, path: Path | None = None) -> str:
         proof = self.proof if path is None else path
         return "sha256:" + hashlib.sha256(proof.read_bytes()).hexdigest()
+
+    def proof_graph_digest(self, path: Path | None = None) -> str:
+        graph = self.proof_graph if path is None else path
+        return "sha256:" + hashlib.sha256(graph.read_bytes()).hexdigest()
 
     def default_handoff(self) -> dict[str, Any]:
         return {
@@ -55,12 +82,22 @@ class ValidateHandoffCLITest(unittest.TestCase):
             "proof_sha256": self.proof_digest(),
         }
 
+    def default_v2_handoff(self) -> dict[str, Any]:
+        handoff = self.default_handoff()
+        handoff["schema_version"] = 2
+        handoff["proof_graph"] = "proof.graph.json"
+        handoff["proof_graph_sha256"] = self.proof_graph_digest()
+        return handoff
+
     def write_graph(self, value: Any) -> None:
         self.graph.write_text(json.dumps(value) + "\n", encoding="utf-8")
 
     def write_handoff(self, value: Any, path: Path | None = None) -> None:
         target = self.handoff if path is None else path
         target.write_text(json.dumps(value) + "\n", encoding="utf-8")
+
+    def write_proof_graph(self, value: Any) -> None:
+        self.proof_graph.write_text(json.dumps(value) + "\n", encoding="utf-8")
 
     def run_command(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -95,12 +132,33 @@ class ValidateHandoffCLITest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any(substring in error for error in payload["errors"]), payload)
 
+    def assert_creator_invalid(self, substring: str) -> None:
+        if self.handoff.exists():
+            self.handoff.unlink()
+        completed, payload = self.run_creator()
+        self.assertEqual(completed.returncode, 1, completed.stderr)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any(substring in error for error in payload["errors"]), payload)
+        self.assertFalse(self.handoff.exists())
+
     def test_minimal_valid_handoff(self) -> None:
         completed, payload = self.run_validator()
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertTrue(payload["ok"])
+        self.assertTrue(payload["legacy"])
         self.assertEqual(payload["roots"], ["KR-001", "KR-002"])
         self.assertEqual(payload["proof_sha256"], self.proof_digest())
+
+    def test_v2_handoff_validates_dag_and_reports_mapping(self) -> None:
+        self.write_handoff(self.default_v2_handoff())
+        completed, payload = self.run_validator()
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["legacy"])
+        self.assertEqual(payload["proof_nodes"], 1)
+        self.assertEqual(payload["mapped_source_claims"], ["KR-001", "KR-002"])
+        self.assertEqual(payload["unmapped_source_claims"], [])
 
     def test_create_builds_and_validates_handoff(self) -> None:
         self.handoff.unlink()
@@ -110,7 +168,7 @@ class ValidateHandoffCLITest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertTrue(payload["created"])
         manifest = json.loads(self.handoff.read_text(encoding="utf-8"))
-        self.assertEqual(manifest, self.default_handoff())
+        self.assertEqual(manifest, self.default_v2_handoff())
 
     def test_create_refuses_to_overwrite_handoff(self) -> None:
         completed, payload = self.run_creator()
@@ -125,7 +183,9 @@ class ValidateHandoffCLITest(unittest.TestCase):
 
         completed, payload = self.run_creator()
         self.assertEqual(completed.returncode, 1)
-        self.assertTrue(any("keys must equal roots" in error for error in payload["errors"]))
+        self.assertTrue(
+            any("keys must equal roots" in error for error in payload["errors"])
+        )
         self.assertFalse(self.handoff.exists())
 
     def test_init_creates_minimal_nonconflicting_layout(self) -> None:
@@ -140,6 +200,11 @@ class ValidateHandoffCLITest(unittest.TestCase):
         second_output = Path(second_payload["output"])
         self.assertEqual(second_output.name, first_output.name + "-2")
         self.assertTrue((first_output / "proof.md").is_file())
+        initialized_graph = first_output / "proof.graph.json"
+        self.assertTrue(initialized_graph.is_file())
+        self.assertEqual(
+            json.loads(initialized_graph.read_text(encoding="utf-8"))["nodes"], {}
+        )
         self.assertFalse((first_output / "handoff.json").exists())
 
     def test_graph_root_order_is_not_semantic(self) -> None:
@@ -150,6 +215,87 @@ class ValidateHandoffCLITest(unittest.TestCase):
         completed, payload = self.run_validator()
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertTrue(payload["ok"])
+
+    def test_duplicate_node_titles_are_allowed(self) -> None:
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-001"]["requires"] = ["PF-002"]
+        proof_graph["nodes"]["PF-002"] = {
+            "title": "Source theorems",
+            "statement": "The first source theorem holds.",
+            "requires": [],
+            "sources": ["KR-001"],
+        }
+        self.write_proof_graph(proof_graph)
+        self.proof.write_text(
+            "# Refactored proof\n\n"
+            "### PF-001 — Source theorems\n\n"
+            "Both source theorems hold.\n\n"
+            "### PF-002 — Source theorems\n\n"
+            "The first source theorem holds.\n",
+            encoding="utf-8",
+        )
+
+        self.handoff.unlink()
+        completed, payload = self.run_creator()
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["proof_nodes"], 2)
+
+    def test_proof_graph_rejects_cycle_orphan_and_unknown_source(self) -> None:
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-001"]["requires"] = ["PF-001"]
+        self.write_proof_graph(proof_graph)
+        self.assert_creator_invalid("requires itself")
+
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-002"] = {
+            "title": "Unused result",
+            "statement": "An unused result holds.",
+            "requires": [],
+            "sources": ["KR-001"],
+        }
+        self.write_proof_graph(proof_graph)
+        self.proof.write_text(
+            self.proof.read_text(encoding="utf-8")
+            + "\n### PF-002 — Unused result\n\nAn unused result holds.\n",
+            encoding="utf-8",
+        )
+        self.assert_creator_invalid("outside every root closure")
+
+        self.write_proof_graph(self.default_proof_graph())
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-001"]["sources"] = ["KR-001", "KR-999"]
+        self.write_proof_graph(proof_graph)
+        self.proof.write_text(
+            "# Refactored proof\n\n"
+            "### PF-001 — Source theorems\n\n"
+            "Both source theorems hold.\n",
+            encoding="utf-8",
+        )
+        self.assert_creator_invalid("outside canonical root closure")
+
+    def test_proof_section_must_start_with_exact_statement(self) -> None:
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-001"]["statement"] = "A different statement."
+        self.write_proof_graph(proof_graph)
+        self.assert_creator_invalid("must begin with its exact statement")
+
+    def test_proof_graph_must_account_for_complete_canonical_closure(self) -> None:
+        graph = self.default_graph()
+        graph["requires"]["KR-001"] = ["KR-003"]
+        graph["requires"]["KR-003"] = []
+        self.write_graph(graph)
+
+        self.assert_creator_invalid(
+            "does not account for canonical closure claims: KR-003"
+        )
+
+    def test_changed_proof_graph_is_rejected(self) -> None:
+        self.write_handoff(self.default_v2_handoff())
+        proof_graph = self.default_proof_graph()
+        proof_graph["nodes"]["PF-001"]["title"] = "Changed title"
+        self.write_proof_graph(proof_graph)
+        self.assert_invalid("does not match proof graph bytes")
 
     def test_noncanonical_graph_copy_is_rejected(self) -> None:
         archived = self.root / "archived.graph.json"
@@ -167,7 +313,7 @@ class ValidateHandoffCLITest(unittest.TestCase):
     def test_schema_constants_and_exact_keys(self) -> None:
         variants: list[tuple[str, dict[str, Any], str]] = []
         for field, value in (
-            ("schema_version", 2),
+            ("schema_version", 3),
             ("schema_version", True),
             ("kind", "other"),
             ("status", "draft"),
