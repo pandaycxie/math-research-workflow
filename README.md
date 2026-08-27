@@ -17,6 +17,17 @@ Each skill is self-contained under [`skills/`](skills/). Start with
 [`skills/research-loop/SKILL.md`](skills/research-loop/SKILL.md) for the overall
 workflow.
 
+## Workflow
+
+The skills form a staged workflow:
+
+1. `research-loop` develops and validates the research closure.
+2. `proof-refactor` reorganizes a completed proof for local verification.
+3. `proof-to-paper` converts the validated proof into manuscript form.
+
+`literature-download` supports targeted source retrieval when explicitly
+authorized for the current task.
+
 ## Install locally
 
 Copy only the skills you want into a project-local `.agents/skills` directory:
