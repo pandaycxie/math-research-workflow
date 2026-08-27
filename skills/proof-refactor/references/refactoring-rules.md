@@ -51,6 +51,22 @@ dependency relation. Route the latter case back to `$research-loop`.
 Prefer a shorter dependency route, not shorter prose. After compression, a
 reader must still be able to reconstruct each load-bearing inference locally.
 
+## Calculation detail
+
+For each calculation-heavy inference, state the target and exact inputs; display
+enough intermediate equalities or inequalities to expose substitutions,
+cancellations, integrations by parts, boundary terms, domain restrictions, and
+load-bearing signs or constants. Compress routine algebra only when adjacent
+lines determine it. Words such as `standard`, `straightforward`, `after
+simplification`, or `this closes` do not replace a step. End with the exact
+implication that advances the proof.
+
+Compression removes discovery history, duplicate routes, and routine
+repetition—not analytic derivations. Put long derivations in named technical
+subsections of `proof.md` and cite them from the main spine; `KR-*` or log
+references provide traceability only. Machine tables may remain external only
+if `proof.md` states the exact proposition, analytic role, and trust boundary.
+
 ## Separate human explanation from technical verification
 
 Let the main proof state what a technical module proves, why that statement is

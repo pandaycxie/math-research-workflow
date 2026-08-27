@@ -57,6 +57,13 @@ claim must state its real scope and may depend only on proved prerequisites.
 Only explicit `requires` edges are hard dependencies; exploratory and
 alternative routes need not enter a Goal root's closure.
 
+Report a proof or mark a claim `Proved` only when each load-bearing inference is
+locally checkable. Show calculation inputs, intermediate equalities or
+inequalities, boundary terms, and domain and sign conditions; `standard` or
+`after simplification` is not a step. Compress only algebra fixed by adjacent
+displayed lines. Put long derivations in one bounded log section or evidence
+and link them from the concise claim.
+
 Use the helper's `next-id` command for a new claim and prefer the numeric ID
 alone. An optional uppercase suffix is allowed only when it is one established
 mathematical term already used in the literal title. Do not create compressed
