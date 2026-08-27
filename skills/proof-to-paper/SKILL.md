@@ -24,11 +24,16 @@ Use one authoritative input:
 - a completed standalone proof corpus supplied or approved by the user.
 
 For a research-loop input, locate its bundled graph helper and run
-`check --strict --complete`, passing `--root PROJECT_ROOT` when needed. Treat
-the canonical ledger, graph, evidence, roots, and hard closure as authoritative;
-the readiness report is only a routing summary. Read only in-scope claim
-sections, load-bearing evidence, and targeted log entries. Do not duplicate the
-incoming ledger or broaden the scope without approval.
+`check --strict --complete --readability`, passing `--root PROJECT_ROOT` when
+needed. Treat the canonical ledger, graph, evidence, roots, and hard closure as
+authoritative; the readiness report is only a routing summary. Read only
+in-scope claim sections, load-bearing evidence, and targeted log entries. Do not
+duplicate the incoming ledger or broaden the scope without approval.
+
+For each root, use `order ROOT` for dependency-first claim IDs and titles, then
+use `show CLAIM` for exact bounded sections. Use `find QUERY` only to locate an
+otherwise unknown claim. Treat IDs and titles as navigation; state the actual
+mathematical result in the manuscript.
 
 For a proof-refactor input, also run its bundled handoff validator. Use
 `proof.md` as the preferred exposition only when its source roots, digests, and

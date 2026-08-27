@@ -24,10 +24,15 @@ inspection, or request to draft a paper is not by itself authorization to
 create refactoring artifacts.
 
 Locate the research root and run the available `$research-loop` graph helper
-with `check --strict --complete`, passing `--root PROJECT_ROOT` when needed. Do
-not assume a repository-local copy of the helper. Use the verified Goal roots
-and their complete `requires` closure as scope; the readiness report is only a
-routing summary.
+with `check --strict --complete --readability`, passing `--root PROJECT_ROOT`
+when needed. Do not assume a repository-local copy of the helper. Use the
+verified Goal roots and their complete `requires` closure as scope; the
+readiness report is only a routing summary.
+
+For each root, use `order ROOT` for dependency-first claim IDs and titles, then
+use `show CLAIM` for exact bounded sections. Use `find QUERY` only when the
+relevant claim is not yet known. Treat IDs and titles as navigation rather than
+mathematical content or reader-facing terminology.
 
 If the required `$research-loop` skill or helper cannot be located, stop and
 report the missing dependency. Do not bypass or reimplement the completion

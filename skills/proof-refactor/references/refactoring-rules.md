@@ -81,7 +81,9 @@ Remove or rewrite:
   without a literal mathematical reason.
 
 Stable `KR-*` identifiers may remain in traceability notes, but they are not
-reader-facing mathematical terminology.
+reader-facing mathematical terminology. Pair an identifier with the literal
+result or its local proof location rather than copying an opaque mnemonic as
+the explanation.
 
 ## Semantic audit
 

@@ -14,14 +14,17 @@ claim.
    changed mathematical passage against its canonical support.
 5. Clean-build the manuscript, resolve actionable compiler and bibliography
    diagnostics, and inspect the PDF for layout defects.
-6. Freeze the reviewed source, bibliography, and PDF with the bundled helper:
+6. Immediately before freezing, rerun every applicable deterministic upstream
+   completion and handoff validator. Stop if the canonical source or derived
+   proof changed during drafting.
+7. Freeze the reviewed source, bibliography, and PDF with the bundled helper:
 
    ```bash
    python <proof-to-paper-directory>/scripts/paper_artifacts.py freeze \
      --manuscript PATH/TO/manuscript_YYYYMMDD
    ```
 
-7. Review exactly those frozen bytes. Run the deterministic final check:
+8. Review exactly those frozen bytes. Run the deterministic final check:
 
    ```bash
    python <proof-to-paper-directory>/scripts/paper_artifacts.py check \
