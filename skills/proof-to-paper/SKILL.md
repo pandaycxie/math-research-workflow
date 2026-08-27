@@ -7,58 +7,44 @@ description: Turn a completed proof corpus, validated research-loop closure, or 
 
 ## Objective
 
-Turn validated mathematical work into one rigorous, compact English manuscript
+Turn validated mathematical work into one publication-ready LaTeX manuscript
 without strengthening hypotheses, weakening conclusions, or hiding proof gaps.
 
-## Authorization and research handoff
+## Authorization and inputs
 
 Start paperization only when the user explicitly asks to run `$proof-to-paper`
 or otherwise clearly approves drafting the paper. Research completion, a
 readiness report, a status question, or a request to inspect this skill is not
 authorization.
 
-When invoked after `$research-loop`:
+Use one authoritative input:
 
-- treat `KEY_RESULTS.md` as the canonical claim ledger and
-  `KEY_RESULTS.graph.json` roots plus their `requires` closure as the incoming
-  paper scope;
-- verify the closure with the bundled graph helper from the available
-  `$research-loop` skill, passing `--root PROJECT_ROOT` when needed; do not
-  assume a repository-local skill path. Then read only the closure's claim
-  sections, load-bearing evidence, and targeted `RESEARCH_LOG.md` entries;
-- use the readiness report as a routing summary, but verify the current files;
-- keep claims outside the root closure excluded unless the user broadens the
-  scope explicitly;
-- reuse the canonical ledger and graph instead of building temporary
-  duplicates.
+- a validated `$research-loop` root closure;
+- a current `$proof-refactor` handoff backed by that closure; or
+- a completed standalone proof corpus supplied or approved by the user.
 
-When a `$proof-refactor` handoff is supplied:
+For a research-loop input, locate its bundled graph helper and run
+`check --strict --complete`, passing `--root PROJECT_ROOT` when needed. Treat
+the canonical ledger, graph, evidence, roots, and hard closure as authoritative;
+the readiness report is only a routing summary. Read only in-scope claim
+sections, load-bearing evidence, and targeted log entries. Do not duplicate the
+incoming ledger or broaden the scope without approval.
 
-- rerun the canonical `$research-loop` `check --strict --complete`; the
-  handoff's `validated` status never substitutes for this gate;
-- run the validator from the available `$proof-refactor` skill with the
-  research root and `handoff.json`; do not assume a repository-local skill
-  path;
-- use `proof.md` as the preferred proof architecture only when the source
-  roots/digests and proof hash are current;
-- continue treating the canonical ledger, graph, and evidence as authoritative
-  for theorem scope, dependencies, and correctness;
-- verify every refactored proof step against its canonical claim traceability.
+For a proof-refactor input, also run its bundled handoff validator. Use
+`proof.md` as the preferred exposition only when its source roots, digests, and
+proof hash remain current, and verify its load-bearing steps against canonical
+claim traceability.
 
 If the handoff is stale or invalid while the canonical closure still passes,
-do not report a research gap. Ask whether to rerun `$proof-refactor` or bypass
-the derived view and draft directly from the canonical closure. If the derived
-proof has a traceability defect but the canonical proof is intact, return to
-`$proof-refactor`; only a genuine canonical gap returns to `$research-loop`.
+ask whether to rerun `$proof-refactor` or draft directly from the canonical
+closure. A traceability defect returns to `$proof-refactor`; only a genuine
+canonical gap returns to `$research-loop`.
 
 If a required upstream skill, helper, or validator cannot be located, stop and
-report the missing dependency. Do not replace its validation gate with an ad
-hoc approximation.
+report the missing dependency rather than recreating its validation gate.
 
 If the files reveal a missing dependency or central gap, stop before drafting
-or freeze the current draft, issue a concise research-gap report, and wait for
-the user to decide whether to resume `$research-loop`. Never repair the gap in
-paper prose.
+or freeze the current draft and report the gap. Never repair it in paper prose.
 
 ## Deliverables
 
@@ -84,31 +70,24 @@ The initializer creates the directory structure and empty bibliography. Write
 the mathematical manuscript as `main.tex` and build `output/pdf/main.pdf`.
 The artifact helper creates `artifact-manifest.json` only after the reviewed
 source, bibliography, and PDF are frozen; its final check must pass before a
-completion claim.
+completion claim. Do not create synchronized reader and submission variants.
 
-## Entry Gate
+## Entry checks
 
 Before drafting:
 
-1. Determine the approved scope. For a research-loop handoff, use the verified
-   root closure; otherwise read the proof artifacts in scope.
-2. For each in-scope claim, verify its canonical status and classify the
-   evidence modality only where needed; do not recreate classifications already
-   settled by the research ledger.
-3. Include a computational or local-model claim as a theorem only when it has
-   a written rigorous proof or a validated computer-assisted proof. Otherwise
-   keep it outside the main conclusions.
-4. If no canonical research ledger and dependency graph exist, build the
-   smallest temporary claim inventory needed for paperization. Do not duplicate
-   an incoming research-loop ledger.
-5. Reconcile notation, normalization, signs, gauges, scaling conventions, subsequence/full-sequence claims, and theorem scope.
-6. If a central gap remains, stop with a research-gap report and await the
-   user's decision. Never convert a gap into a hidden assumption or a
-   publishable theorem.
+- fix the approved theorem scope and proof source;
+- reconcile notation, normalization, domains, signs, gauges, scaling, and
+  subsequence versus full-sequence statements;
+- include a computational claim as a theorem only when its declared proof
+  standard supports that status;
+- for a standalone corpus only, create the smallest temporary claim inventory
+  needed to prevent omissions or circular exposition;
+- stop if a central gap remains.
 
 ## Drafting and completion
 
-After the entry gate passes and before outlining or drafting, read
+After the entry checks pass and before outlining or drafting, read
 [manuscript-standard.md](references/manuscript-standard.md). It defines the
 proof-dependent architecture, writing standard, and bibliography policy.
 
