@@ -32,14 +32,19 @@ Maintain only these research-memory records:
 - `RESEARCH_LOG.md`: reusable derivations, diagnostics, failed routes, and
   consequential decisions.
 
-Write both Markdown records for a mathematician who knows the subject but has
-not seen the conversation. A claim heading must state the mathematical object
-and the conclusion, open question, or obstruction in its relevant scope. Begin
-each claim or log entry with its literal mathematical statement or outcome;
-prefer formulas and established terminology to coined workflow metaphors. An
-identifier or shorthand is a navigation aid, not a substitute for an estimate,
-implication, obstruction, or theorem. Define any nonstandard term before
-relying on it.
+Before any durable write, identify the exact mathematical delta; if there is no
+new or changed claim or reusable outcome of an event listed below, write
+nothing. Packaging, recap, and ordinary reasoning are not new claims.
+
+Write admitted entries for a mathematician who knows the subject but has not
+seen the conversation. The entry heading and opening must state the object,
+scope, and literal result without relying on a coined label. State the estimate,
+implication, obstruction, theorem, counterexample, or computed result first.
+Define nonstandard shorthand before use and retain it only if reused. As a
+deletion test, remove local labels (for example, `mechanism`, `bridge`,
+`package`, `audit`, `closure`, `trap`, `tube`, or `cone`) and progress
+adjectives; if the entry no longer says what can be checked, disproved, or
+reproduced, rewrite or omit it.
 
 Read [graph-memory.md](references/graph-memory.md) before creating or migrating
 the graph, changing dependency structure, revising an upstream claim, managing
