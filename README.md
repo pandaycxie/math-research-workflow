@@ -1,5 +1,7 @@
 # Research Workflow Skills
 
+English | [简体中文](README.zh-CN.md)
+
 A small collection of Codex skills for long-running mathematical research,
 from durable research memory to proof refactoring and paper drafting.
 The workflow separates open-ended research, proof refinement, and manuscript production while preserving traceability between stages.
