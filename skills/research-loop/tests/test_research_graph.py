@@ -28,6 +28,9 @@ class ResearchGraphCLITest(unittest.TestCase):
             json.dumps(graph, indent=2) + "\n", encoding="utf-8"
         )
 
+    def write_log(self, text: str) -> None:
+        (self.root / "RESEARCH_LOG.md").write_text(text, encoding="utf-8")
+
     def run_command(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--root", str(self.root), *arguments],
@@ -637,6 +640,312 @@ Background.
                 for item in payload["warnings"]
             )
         )
+
+    def test_resume_emits_exact_bounded_restart_without_claim_bodies(self) -> None:
+        self.make_basic_fixture(root_status="Open")
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002` remains Open.
+- Last safe checkpoint: `KR-001`.
+- Next safe action: test the stated implication.
+
+## Historical calculation
+
+This old body contains a marker that must not enter resume output.
+"""
+        )
+
+        completed, payload = self.run_json("resume")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertLessEqual(payload["output_bytes"], 12 * 1024)
+        self.assertIn("Next safe action", payload["restart"]["text"])
+        self.assertEqual(
+            [item["id"] for item in payload["referenced_claims"]],
+            ["KR-002", "KR-001"],
+        )
+        self.assertNotIn("historical marker", completed.stdout)
+        self.assertNotIn("The upstream statement is exact", completed.stdout)
+
+    def test_resume_stays_small_when_the_log_has_thousands_of_lines(self) -> None:
+        self.make_basic_fixture(root_status="Open")
+        historical = "\n".join(
+            f"Historical line {index} must remain on disk." for index in range(5000)
+        )
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002` remains Open.
+- Last safe checkpoint: `KR-001`.
+- Next safe action: inspect only the active claim.
+
+## Large historical section
+
+"""
+            + historical
+            + "\n"
+        )
+
+        completed, payload = self.run_json("resume")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertLessEqual(payload["output_bytes"], 12 * 1024)
+        self.assertNotIn("Historical line 4999", completed.stdout)
+
+        completed, payload = self.run_json("check", "--memory")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertGreater(payload["memory"]["research_log"]["lines"], 5000)
+        self.assertLessEqual(payload["memory"]["projected_resume_bytes"], 12 * 1024)
+
+    def test_memory_check_rejects_long_restart_and_unknown_claim(self) -> None:
+        self.make_basic_fixture(root_status="Open")
+        lines = [
+            "# Research Log",
+            "",
+            "## Current restart point",
+            "",
+            "- Goal root: `KR-002`.",
+            "- Unknown pointer: `KR-999`.",
+        ] + [f"- Repeated state line {index}." for index in range(40)]
+        self.write_log("\n".join(lines) + "\n")
+
+        completed, payload = self.run_json("check", "--memory")
+
+        self.assertEqual(completed.returncode, 1, completed.stderr)
+        errors = "\n".join(payload["errors"])
+        self.assertIn("restart point has", errors)
+        self.assertIn("KR-999", errors)
+
+        completed = self.run_command("resume")
+        self.assertEqual(completed.returncode, 2)
+        self.assertEqual(completed.stdout, "")
+
+    def test_resume_resolves_a_unique_legacy_numeric_alias(self) -> None:
+        self.write_ledger(
+            """# Fixture
+
+### KR-001-COERCIVITY — Exact coercivity estimate [Proved]
+
+The estimate is proved.
+
+### KR-002 — Root theorem [Open]
+
+The root remains open.
+"""
+        )
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": ["KR-002"],
+                "requires": {
+                    "KR-001-COERCIVITY": [],
+                    "KR-002": ["KR-001-COERCIVITY"],
+                },
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002` remains Open.
+- Last safe checkpoint: `KR-001`.
+- Next safe action: inspect the exact estimate.
+"""
+        )
+
+        completed, payload = self.run_json("resume")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(
+            payload["legacy_aliases"],
+            {"KR-001": "KR-001-COERCIVITY"},
+        )
+        self.assertEqual(
+            [item["id"] for item in payload["referenced_claims"]],
+            ["KR-002", "KR-001-COERCIVITY"],
+        )
+
+    def test_memory_check_rejects_ambiguous_or_mispadded_numeric_aliases(self) -> None:
+        self.write_ledger(
+            """# Fixture
+
+### KR-001-LEFT — Left estimate [Proved]
+
+The left estimate is proved.
+
+### KR-001-RIGHT — Right estimate [Proved]
+
+The right estimate is proved.
+
+### KR-002 — Root theorem [Open]
+
+The root remains open.
+"""
+        )
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": ["KR-002"],
+                "requires": {
+                    "KR-001-LEFT": [],
+                    "KR-001-RIGHT": [],
+                    "KR-002": [],
+                },
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002`.
+- Ambiguous pointer: `KR-001`.
+- Mispadded pointer: `KR-2`.
+"""
+        )
+
+        completed, payload = self.run_json("check", "--memory")
+
+        self.assertEqual(completed.returncode, 1, completed.stderr)
+        restart = payload["memory"]["restart"]
+        self.assertEqual(
+            restart["ambiguous_claim_references"],
+            {"KR-001": ["KR-001-LEFT", "KR-001-RIGHT"]},
+        )
+        self.assertEqual(restart["unknown_claim_references"], ["KR-2"])
+
+    def test_show_supports_exact_claim_relative_ranges(self) -> None:
+        self.make_basic_fixture()
+
+        completed = self.run_command("show", "KR-001", "--range", "2:3")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(
+            completed.stdout,
+            "\nThe upstream statement is exact.\n",
+        )
+        self.assertNotIn("### KR-001", completed.stdout)
+
+        completed = self.run_command("show", "KR-001", "--range", "2:99")
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("range ends after its final line", completed.stderr)
+
+    def test_log_find_and_show_ignore_headings_inside_code_fences(self) -> None:
+        self.make_basic_fixture(root_status="Open")
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002` remains Open.
+- Next safe action: inspect `KR-001`.
+
+## Exact coercivity calculation
+
+This section uses KR-001 and the literal keyword boundary.
+
+```markdown
+## Fake boundary heading
+
+This is not a log section.
+```
+
+## Independent compactness calculation
+
+This section uses KR-002.
+"""
+        )
+
+        completed, payload = self.run_json("log-find", "boundary")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["total_matches"], 1)
+        match = payload["matches"][0]
+        self.assertEqual(match["title"], "Exact coercivity calculation")
+        self.assertEqual(match["claim_references"], ["KR-001"])
+
+        completed = self.run_command("log-show", "--line", str(match["line"]))
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Fake boundary heading", completed.stdout)
+        self.assertNotIn("Independent compactness calculation", completed.stdout)
+
+    def test_log_show_refuses_oversized_section_and_accepts_a_range(self) -> None:
+        self.make_basic_fixture(root_status="Open")
+        body = "\n".join(f"Diagnostic line {index}." for index in range(161))
+        self.write_log(
+            """# Research Log
+
+## Current restart point
+
+- Goal root: `KR-002` remains Open.
+- Next safe action: inspect `KR-001`.
+
+## Long diagnostic
+
+"""
+            + body
+            + "\n"
+        )
+
+        completed = self.run_command("log-show", "--heading", "Long diagnostic")
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("too large for bounded show/output", completed.stderr)
+
+        completed = self.run_command(
+            "log-show", "--heading", "Long diagnostic", "--range", "1:3"
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(
+            completed.stdout,
+            "## Long diagnostic\n\nDiagnostic line 0.\n",
+        )
+
+    def test_order_and_impact_are_bounded_by_default(self) -> None:
+        sections = []
+        requires: dict[str, list[str]] = {}
+        for number in range(1, 61):
+            claim_id = f"KR-{number:03d}"
+            sections.append(
+                f"### {claim_id} — Exact result number {number} [Proved]\n\n"
+                f"Result {number}.\n"
+            )
+            requires[claim_id] = [] if number == 1 else [f"KR-{number - 1:03d}"]
+        self.write_ledger("# Fixture\n\n" + "\n".join(sections))
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": ["KR-060"],
+                "requires": requires,
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+
+        completed, payload = self.run_json("order", "KR-060")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["total"], 60)
+        self.assertTrue(payload["truncated"])
+        self.assertLessEqual(len(payload["order"]), 50)
+        self.assertLessEqual(len(completed.stdout.encode("utf-8")), 12 * 1024)
+
+        completed, payload = self.run_json("impact", "KR-001")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["transitive_total"], 59)
+        self.assertTrue(payload["truncated"])
+        self.assertLessEqual(len(payload["transitive"]), 50)
+        self.assertLessEqual(len(completed.stdout.encode("utf-8")), 12 * 1024)
 
 
 if __name__ == "__main__":

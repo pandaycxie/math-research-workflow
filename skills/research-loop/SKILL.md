@@ -32,19 +32,10 @@ Maintain only these research-memory records:
 - `RESEARCH_LOG.md`: reusable derivations, diagnostics, failed routes, and
   consequential decisions.
 
-Before any durable write, identify the exact mathematical delta; if there is no
-new or changed claim or reusable outcome of an event listed below, write
-nothing. Packaging, recap, and ordinary reasoning are not new claims.
-
-Write admitted entries for a mathematician who knows the subject but has not
-seen the conversation. The entry heading and opening must state the object,
-scope, and literal result without relying on a coined label. State the estimate,
-implication, obstruction, theorem, counterexample, or computed result first.
-Define nonstandard shorthand before use and retain it only if reused. As a
-deletion test, remove local labels (for example, `mechanism`, `bridge`,
-`package`, `audit`, `closure`, `trap`, `tube`, or `cone`) and progress
-adjectives; if the entry no longer says what can be checked, disproved, or
-reproduced, rewrite or omit it.
+Before any durable write or update, read
+[memory-writing.md](references/memory-writing.md) and apply its admission,
+calculation, replacement, and post-write checks. If there is no exact new or
+changed mathematical statement or reusable event outcome, write nothing.
 
 Read [graph-memory.md](references/graph-memory.md) before creating or migrating
 the graph, changing dependency structure, revising an upstream claim, managing
@@ -56,6 +47,12 @@ Format ledger claims as
 claim must state its real scope and may depend only on proved prerequisites.
 Only explicit `requires` edges are hard dependencies; exploratory and
 alternative routes need not enter a Goal root's closure.
+
+Exclusion from a Goal root's closure is a retrieval decision, not by itself a
+reason to erase a still-valid proved theorem. Apply the proved-result
+retention rule in [memory-writing.md](references/memory-writing.md): keep
+reusable off-route theorems as unrooted Key Results and move only their long
+proof detail outside the default retrieval package.
 
 Report a proof or mark a claim `Proved` only when each load-bearing inference is
 locally checkable. Show calculation inputs, intermediate equalities or
@@ -83,19 +80,27 @@ checkpoint, and next safe action as pointers instead of duplicating derivations.
 
 ### Bounded retrieval
 
+After a context loss, task switch, or explicit restart, run `resume` first.
+It returns only the exact restart section, compact Goal-root summaries, and
+titles and statuses of claims referenced by the restart section. If it refuses
+because a memory bound or reference check fails, run `check --memory` and fix
+that stated defect; do not bypass the refusal by reading whole memory files.
+
 Inspect file size without loading the body when a memory file may be large. If
 `KEY_RESULTS.md` or `RESEARCH_LOG.md` exceeds 2,000 lines or 200 KiB, never
 print or read the whole file into model context merely to recover state or
 locate one result.
 
-- Start from `Current restart point`.
-- Use graph `summary TARGET` for a compact closure view and `show CLAIM` for
-  one bounded exact ledger section. For an oversized section, use targeted
-  ranges; request `show --full` only when the whole section is necessary.
-- Search the log by exact heading, `KR-*` reference, or targeted keyword, then
-  read only the bounded relevant section.
-- Do not migrate, renumber, or index historical log entries merely because a
-  file is large.
+- Use `summary TARGET` for a compact closure view and `show CLAIM` for one
+  bounded exact claim. If it is too large, use `show CLAIM --range START:END`;
+  use `--full` only after deciding the entire section is required.
+- Use `log-find QUERY` to retrieve matching headings and line metadata, then
+  `log-show --line N` or `log-show --heading TEXT`. Use `--range START:END`
+  for an oversized section.
+- `order`, `impact`, `find`, and `log-find` have bounded default output.
+  Increase `--limit` only for a stated need.
+- Do not migrate, renumber, summarize, or index historical entries merely
+  because a file is large. Retrieval pruning never changes the source record.
 
 ## Work on events, not turns
 

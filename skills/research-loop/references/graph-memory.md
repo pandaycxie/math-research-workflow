@@ -100,14 +100,26 @@ never chooses a research step.
   add `--verbose` only when their identities are needed.
 - `check --readability`: report only structural readability risks and an
   informational mnemonic count, without changing validity or completion.
+- `check --memory`: validate the unique bounded restart section, all claim
+  references in it, and the projected bounded resume package.
+- `resume`: emit the exact restart section, compact Goal-root summaries, and
+  title/status metadata for referenced claims. It refuses unresolved
+  references or an oversized package.
 - `next-id`: return the next append-only numeric claim ID.
 - `find QUERY`: search claim IDs and literal titles with bounded output.
 - `summary TARGET`: show one indexed closure's size, statuses, evidence,
   digest freshness, readiness, and target title.
-- `show CLAIM`: print one bounded exact ledger section; use `--full` only
-  after deliberately deciding that an oversized section is necessary.
-- `impact CLAIM`: list descendants and their titles after an upstream revision.
-- `order CLAIM`: print a dependency-first closure order with titles.
+- `show CLAIM`: print one bounded exact ledger section. Use
+  `--range START:END` for an exact section-relative slice and `--full` only
+  after deliberately deciding that the whole oversized section is necessary.
+- `log-find QUERY`: search exact log terms without returning log bodies.
+- `log-show --line N` or `log-show --heading TEXT`: print one bounded exact
+  log section; use `--range START:END` for a smaller exact slice.
+- `impact CLAIM`: list a bounded prefix of descendants and titles after an
+  upstream revision.
+- `order CLAIM`: print a bounded dependency-first closure prefix and titles.
+  For `impact`, `order`, `find`, and `log-find`, raise `--limit` only
+  when the omitted count shows that more entries are needed.
 - `dot`: emit a Graphviz view.
 
 The helper discovers the nearest parent graph. Pass `--root PATH` when the
