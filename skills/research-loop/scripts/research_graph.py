@@ -18,6 +18,10 @@ ALLOWED_STATUSES = ("Open", "Conditional", "Proved", "Rejected", "Superseded")
 SUPPORTED_SCHEMA_VERSIONS = (2, 3)
 SHOW_MAX_LINES = 200
 SHOW_MAX_BYTES = 16 * 1024
+OPEN_READABILITY_MAX_LINES = 40
+OPEN_READABILITY_MAX_BYTES = 4 * 1024
+PROOF_READABILITY_MAX_LINES = 160
+PROOF_READABILITY_MAX_BYTES = 12 * 1024
 LOG_SHOW_MAX_LINES = 160
 LOG_SHOW_MAX_BYTES = 12 * 1024
 RESTART_MAX_LINES = 40
@@ -882,12 +886,17 @@ def readability_findings(
     for claim_id, claim in ledger_claims.items():
         section = str(claim["section"])
         body = "\n".join(section.splitlines()[1:]).strip()
+        section_lines, section_bytes = section_measure(section)
+        status = claim["status"]
         if not body:
             empty.append(claim_id)
-        if (
-            len(section.splitlines()) > SHOW_MAX_LINES
-            or len(section.encode("utf-8")) > SHOW_MAX_BYTES
-        ):
+        if status in ("Open", "Superseded"):
+            max_lines = OPEN_READABILITY_MAX_LINES
+            max_bytes = OPEN_READABILITY_MAX_BYTES
+        else:
+            max_lines = PROOF_READABILITY_MAX_LINES
+            max_bytes = PROOF_READABILITY_MAX_BYTES
+        if section_lines > max_lines or section_bytes > max_bytes:
             oversized.append(claim_id)
         if CLAIM_NUMBER.fullmatch(claim_id) and claim_id.count("-") == 2:
             mnemonic_ids += 1

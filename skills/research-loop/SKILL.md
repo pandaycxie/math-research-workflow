@@ -48,6 +48,12 @@ claim must state its real scope and may depend only on proved prerequisites.
 Only explicit `requires` edges are hard dependencies; exploratory and
 alternative routes need not enter a Goal root's closure.
 
+Treat `KEY_RESULTS.md` as a theorem ledger, not a research narrative: keep an
+open target statement-only, and keep proved, conditional, or rejected results
+with their shortest locally checkable support. Put routes and chronology in the
+log; never omit mathematical scope or proof steps merely for brevity. Apply the
+status-specific rules in [memory-writing.md](references/memory-writing.md).
+
 Exclusion from a Goal root's closure is a retrieval decision, not by itself a
 reason to erase a still-valid proved theorem. Apply the proved-result
 retention rule in [memory-writing.md](references/memory-writing.md): keep
@@ -59,8 +65,9 @@ locally checkable. Show calculation inputs, intermediate equalities or
 inequalities, boundary terms, and domain and sign conditions; `standard` or
 `after simplification` is not a step. Compress only algebra fixed by adjacent
 displayed lines. Prefer multiline display math for long calculations, with
-breaks at mathematically meaningful transformations. Put long derivations in
-one bounded log section or evidence and link them from the concise claim.
+breaks at mathematically meaningful transformations. Put long load-bearing
+derivations in registered evidence and link the exact relevant section from the
+concise claim; use the log for reusable exploration and route diagnostics.
 
 Use the helper's `next-id` command for a new claim and prefer the numeric ID
 alone. An optional uppercase suffix is allowed only when it is one established

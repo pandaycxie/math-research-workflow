@@ -641,6 +641,38 @@ Background.
             )
         )
 
+    def test_readability_uses_status_specific_soft_budgets(self) -> None:
+        open_body = "\n".join(
+            f"Open statement line {index}." for index in range(45)
+        )
+        short_proof = "\n".join(f"Proof line {index}." for index in range(45))
+        long_proof = "\n".join(f"Proof line {index}." for index in range(165))
+        self.write_ledger(
+            "# Fixture\n\n"
+            "### KR-001 — An overlong open target [Open]\n\n"
+            f"{open_body}\n\n"
+            "### KR-002 — A proof within its budget [Proved]\n\n"
+            f"{short_proof}\n\n"
+            "### KR-003 — A proof above its budget [Proved]\n\n"
+            f"{long_proof}\n"
+        )
+        self.write_graph(
+            {
+                "schema_version": 3,
+                "ledger": "KEY_RESULTS.md",
+                "roots": ["KR-001"],
+                "requires": {"KR-001": [], "KR-002": [], "KR-003": []},
+                "evidence": {},
+                "root_digests": {},
+            }
+        )
+
+        completed, payload = self.run_json("check", "--readability")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["readability"]["oversized_sections"], 2)
+
     def test_resume_emits_exact_bounded_restart_without_claim_bodies(self) -> None:
         self.make_basic_fixture(root_status="Open")
         self.write_log(

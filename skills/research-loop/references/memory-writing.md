@@ -35,12 +35,13 @@ Result when at least one of the following holds:
 - reconstructing it would require substantial analysis or create a material
   risk of losing hypotheses, constants, equality cases, or boundary terms.
 
-State the theorem's exact scope and any non-implication that prevents it from
-closing the current Goal. Use literal retrieval terms in its title, keep it
-out of every Goal root's hard closure unless it is actually required, and bind
-long proof details as evidence. Unrooted claims do not enter `resume` or a
-root summary by default, so bounded retrieval does not require mathematical
-deletion.
+State the theorem's exact scope in its hypotheses and conclusion. Put an
+explanatory non-implication in the log unless the non-implication is itself a
+precise reusable mathematical result; in that case record it as a separate Key
+Result. Use literal retrieval terms in the title, keep the theorem out of every
+Goal root's hard closure unless it is actually required, and bind long proof
+details as evidence. Unrooted claims do not enter `resume` or a root summary by
+default, so bounded retrieval does not require mathematical deletion.
 
 Demote a result to the log or evidence only when its claim is an exact
 duplicate, has been superseded, is false or inapplicable under the current
@@ -66,6 +67,23 @@ or “certificate”. Such a word is permitted only after the literal mathematic
 statement is present and only if it shortens later references. Delete the word
 as a test: if the remaining text no longer specifies something checkable,
 rewrite the record.
+
+## Write theorem-ledger entries by status
+
+Keep research narration out of `KEY_RESULTS.md` without deleting mathematics:
+
+- `Open`: only the definitions, hypotheses, and exact open statement.
+- `Conditional` or `Proved`: the exact statement and shortest locally
+  checkable derivation or proof spine.
+- `Rejected`: the failed assertion and its calculation, obstruction, or
+  counterexample.
+- `Superseded`: identify the replacement claim and retain no duplicate proof;
+  preserve any non-duplicated valid theorem as its own Key Result.
+
+Put motivation, chronology, route comparisons, preliminary targets, next
+actions, and literature inventories in `RESEARCH_LOG.md`. Never move or delete
+a hypothesis, endpoint, regularity or sign condition, constant, equality case,
+or load-bearing proof step merely for brevity.
 
 ## Record a calculation
 
@@ -95,11 +113,14 @@ $t$. Numerical evidence includes inputs, precision or interval enclosure,
 reproduction command, and the distinction between proved rounding bounds and
 floating-point observations.
 
-Keep the shortest locally checkable proof spine in `KEY_RESULTS.md`. If a new
-claim would exceed 160 lines or 12 KiB, do not omit proof steps to meet the
-bound: split genuine intermediate statements into Key Results, or put long
-mechanical detail in one evidence file and cite exact sections or line ranges.
-Do not duplicate the same long derivation in the ledger and log.
+Keep the shortest locally checkable proof spine in `KEY_RESULTS.md`. An `Open`
+or `Superseded` entry should normally fit within 40 lines and 4 KiB. A
+`Conditional`, `Proved`, or `Rejected` entry should normally fit within 160
+lines and 12 KiB. These are readability budgets, not permission to omit proof
+steps. If a proof-bearing claim exceeds its budget, split genuine intermediate
+theorems into Key Results or put long mechanical detail in one registered
+evidence file and cite the exact sections or line ranges that justify the
+claim. Do not duplicate the same long derivation in the ledger and log.
 
 ## Update dependencies and status
 
